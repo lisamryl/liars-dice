@@ -25,9 +25,9 @@ def setup_game():
     """
     print "What difficulty would you like to play at?"
     difficulty = raw_input("Easy (E), Medium (M), or Hard (H)\n")
-    if difficulty[0].lower() not in ('e', 'm', 'h'):
+    if difficulty[0].lower() not in ('e', 'm', 'h'):  # note will fail if enter (fix later)
         print "Choice not properly given, defaulting to hard!"
-    difficulty = 'h'
+        difficulty = 'h'
     print "How many players would you like to play with (including yourself)?"
     while True:
         try:
@@ -60,6 +60,7 @@ def roll_dice(num_dice):
 def roll_all_dice(num_dice_list):
     # adds the player roll, plus rolls the dice for all opponents and adds all to
     # a list
+    ####  fix later to use classes instead
     """
     Using the list of the number of active dice by player, create a list of all
     dice roll lists by player. Returns the list of all dice.
@@ -198,16 +199,17 @@ def opponent_turn(opponent_roll, current_bet, counts):
 
 ##game
 count, difficulty = setup_game()
+num_opponents = count - 1
 
 #generates list of starting dice numbers for each player
 dice = [5] * count
 #random selection of who starts the game
 initial_marker = randint(0, len(dice))
-opponent_1 = get_opponent_stats(difficulty)
-opponent_2 = get_opponent_stats(difficulty)  # check if this opp exists
-opponent_3 = get_opponent_stats(difficulty)  # check if this opp exists
-opponent_4 = get_opponent_stats(difficulty)  # check if this opp exists
-opponent_5 = get_opponent_stats(difficulty)  # check if this opp exists
+
+# for testing
+opponents = opponent_AI.make_opponents(num_opponents, difficulty)
+opponent_AI.print_opponents(opponents, num_opponents)
+
 # print "initial dice {}".format(dice)  # remove later
 # print "initial marker {}".format(initial_marker)  # remove later
 
