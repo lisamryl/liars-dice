@@ -1,6 +1,5 @@
 from random import randint
-
-import opponent_AI
+import players
 
 ##input
 print "Welcome to Liar's Dice!"
@@ -17,17 +16,19 @@ def setup_game():
     None
 
     Return:
-    Count of players chosen
+    Count of players chosen, difficulty, player_turn (who starts)
 
     Asks player for the number of players from 2-6 (inclusive). If the player
     does not enter a number or enters a number that's out of range, error
     handing asks the user to try again. Returns the number of players selected.
     """
     print "What difficulty would you like to play at?"
+    #get difficulty level
     difficulty = raw_input("Easy (E), Medium (M), or Hard (H)\n")
     if difficulty[0].lower() not in ('e', 'm', 'h'):  # note will fail if enter (fix later)
         print "Choice not properly given, defaulting to hard!"
         difficulty = 'h'
+    #get number of players
     print "How many players would you like to play with (including yourself)?"
     while True:
         try:
@@ -38,7 +39,13 @@ def setup_game():
             break
         except ValueError:
             print "You did not enter an integer, please try again."
-    return [count, difficulty[0].lower()]
+    #determine which player starts
+    player_turn = randint(0, len(count))
+    user_name = raw_input("What is your name?")
+    player = players.HumanPlayer(user_name)
+    ## add opponents
+    #eventually have "create board" when connected to front end
+    return [count, difficulty[0].lower(), player_turn]
 
 
 def roll_dice(num_dice):
@@ -204,7 +211,7 @@ num_opponents = count - 1
 #generates list of starting dice numbers for each player
 dice = [5] * count
 #random selection of who starts the game
-initial_marker = randint(0, len(dice))
+
 
 # for testing
 opponents = opponent_AI.make_opponents(num_opponents, difficulty)
