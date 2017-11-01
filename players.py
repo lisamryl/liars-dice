@@ -1,9 +1,44 @@
 import numpy
 from random import randint
+from flask_sqlalchemy import SQLAlchemy
+
+
+db = SQLAlchemy()
+
+
+################################################################################
+#Model definitions
+
+
+class User(db.Model):
+    """User class"""
+
+    __tablename__ = "user"
+
+    id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    username = db.Column(db.String(64), nullable=False)
+    password = db.Column(db.String(64), nullable=False)
+    email = db.Column(db.String(64), nullable=False)
+    date_of_birth = db.Column(db.DateTime, nullable=False)
+
+    def __init__(self, username, password, fname, lname, email, date_of_birth):
+        pass
 
 
 class AbstractPlayer(object):
     """Abstract player object. Subclasses are: Human and AI"""
+
+    __tablename__ = "player"
+
+    id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
+    position = db.Column(db.Integer)
+    final_place = db.Column(db.Integer)
+    #will need if no current die roll but die count
+    die_count = db.Column(db.Integer)
+    #if turn is in progress
+    die_roll = db.Column()
+
 
     def __init__(self, name, player_type):
         self.name = name
@@ -81,8 +116,28 @@ def print_players(players):
     for i in range(len(players)):
         print players[i].__dict__
 
+##############################################################################
+# Helper functions
 
-#### for testing ####
+
+def connect_to_db(app):
+    """Connect the database to our Flask app."""
+
+    # Configure to use PostgreSQL database
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///game'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db.app = app
+    db.init_app(app)
+
+
 if __name__ == "__main__":
+
+    #connect to db and create all tables
+    from server import app
+    connect_to_db(app)
+    print "Connected to DB."
+    db.create_all()
+
+    #### for testing ####
     m = make_players(5, 'e')
     print_players(m)
