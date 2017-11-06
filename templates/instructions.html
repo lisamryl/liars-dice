@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2> Instructions </h2>
+<h3>Initial Setup</h3>
+<p> Each player will start with 5 6-faced dice. Players can look at their own dice, but they shouldn't be able to see anybody else's. After you peek at your dice, based on what you found you can make a call about how many of any number of dice there are on the table. 
+
+In this game, 1s are wild, meaning that they will be counted towards the total dice of the selected face value (for instance, if you have 2 5s in your hand, and 3 1s in your hand, you have 5 5s or 3 2s, 3s, 4s, or 6s). </p>
+
+<h3>Bidding</h3>
+<p>The calls must be in order to the player on the left. If somebody else makes a higher call than you, you can raise yours, but only if the player that raises it is on the left. The hands are ranked first by amount, number of dice (5 4's), then by value, dots on the face (5 4's). So, (2, 3's) are better that (2, 2's) but not (3, 2's)</p>
+
+    <!-- more instructions here https://www.wikihow.com/Play-Liar%27s-Dice -->
+
+{% endblock %}

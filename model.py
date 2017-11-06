@@ -1,6 +1,7 @@
 import numpy
 from random import randint
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 
 db = SQLAlchemy()
@@ -16,15 +17,20 @@ class User(db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    username = db.Column(db.String(64), nullable=False)
+    username = db.Column(db.String(64), nullable=False)  # username will be email
     password = db.Column(db.String(64), nullable=False)
-    email = db.Column(db.String(64), nullable=False)
+    name = db.Column(db.String(64), nullable=False)
     date_of_birth = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
     last_login = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, username, password, fname, lname, email, date_of_birth):
-        pass
+    def __init__(self, username, password, name, date_of_birth):
+        self.username = username
+        self.password = password
+        self.name = name
+        self.date_of_birth = date_of_birth
+        self.created_at = datetime.now()
+        self.last_login = datetime.now()
 
     def __repr__(self):
         return '<id {} username {} created_at {} >'.format(
@@ -37,12 +43,25 @@ class Game(db.Model):
     __tablename__ = "games"
 
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    num_players = db.Column(db.Integer, nullable=False)
     turn_marker = db.Column(db.Integer, nullable=False)
     is_finished = db.Column(db.Boolean, nullable=False)
     #bid_history = db.Column(db.ARRAY)  ### note: check  with katie on this
     difficulty = db.Column(db.String(1), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
     last_saved = db.Column(db.DateTime, nullable=False)
+
+    def __init__(self, num_players, difficulty):
+        self.num_players = num_players
+        self.turn_marker = randint(1, num_players)
+        self.is_finished = False
+        self.difficulty = difficulty
+        self.created_at = datetime.now()
+        self.last_saved = datetime.now()
+
+    def __repr__(self):
+        return '<id {} turn_marker {} created_at {} >'.format(
+            self.id, self.turn_marker, self.created_at)
 
 
 class AbstractPlayer(db.Model):
@@ -58,18 +77,23 @@ class AbstractPlayer(db.Model):
     final_place = db.Column(db.Integer)
     #will need if no current die roll but die count
     die_count = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+    last_played = db.Column(db.DateTime, nullable=False)
+
     #if turn is in progress
     #current_die_roll = db.Column(db.ARRAY(Integer)) ### note: check  with katie on this
 
     game = db.relationship("Game", backref=db.backref("players"))
 
     #For joined table inheritance
-    __mapper_args__ = {'polymorphic_identity': 'player', 'polymorphic_on': type}
+    # __mapper_args__ = {'polymorphic_identity': 'player', 'polymorphic_on': type}
 
     def __init__(self, name, player_type):
         self.name = name
         self.die_count = 5
         self.player_type = player_type
+        self.created_at = datetime.now()
+        self.last_played = datetime.now()
 
     def roll_dice(self):
         """
@@ -87,36 +111,43 @@ class AbstractPlayer(db.Model):
         return roll
 
 
-class HumanPlayer(AbstractPlayer):
+class Human(AbstractPlayer):
     """Human player in the game (controlled by user)."""
 
     __tablename__ = "humans"
 
     id = db.Column(db.Integer, db.ForeignKey('players.id'), primary_key=True)
+
+    # __mapper_args__ = {'polymorphic_identity': 'human'}
+    __table_args__ = {'extend_existing': True}
+
     #make nullable = true for users who don't log in
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    __mapper_args__ = {'polymorphic_identity': 'human'}
+    user = db.relationship("User", backref=db.backref("humans"))
 
     def __init__(self, name):
-        return super(HumanPlayer, self).__init__(name, "human")
+        return super(Human, self).__init__(name, "human")
 
     def __repr__(self):
-        return '<id {} username {} die_count {} >'.format(
-            self.id, self.user.username, self.players.die_count)
+        # return '<id {} username {} die_count {} >'.format(
+        #     self.id, self.user.username, self.players.die_count)
+        return '<id {} >'.format(self.id)
 
 
-class AIPlayer(AbstractPlayer):
+class AI(AbstractPlayer):
     "Opponent in the game (controlled by AI)"
 
     __tablename__ = "computers"
 
     id = db.Column(db.Integer, db.ForeignKey('players.id'), primary_key=True)
+
+    # __mapper_args__ = {'polymorphic_identity': 'computer'}
+    __table_args__ = {'extend_existing': True}
+
     liar_factor = db.Column(db.Float, nullable=False)
     aggressive_factor = db.Column(db.Float, nullable=False)
     intelligence_factor = db.Column(db.Float, nullable=False)
-
-    __mapper_args__ = {'polymorphic_identity': 'computer'}
 
     def __init__(self, name, difficulty):
         # set liar stats (based on normal dist, 12.5% ave, 2.5% var)
@@ -149,7 +180,7 @@ class AIPlayer(AbstractPlayer):
         # self.liar_factor = .3
         # self.aggressive_factor = .4
         # self.intelligence_factor = .5
-        # return super(AIPlayer, self).__init__(name, "AI")
+        # return super(AI, self).__init__(name, "AI")
 
 
 def make_players(num_players, difficulty):
@@ -157,10 +188,10 @@ def make_players(num_players, difficulty):
     all_players = []
 
     #need to change name after buiding front end
-    all_players.append(HumanPlayer("Test Name"))
+    all_players.append(Human("Test Name"))
 
     for i in range(1, num_players):
-        all_players.append(AIPlayer("opponent_" + str(i), difficulty))
+        all_players.append(AI("opponent_" + str(i), difficulty))
 
     return all_players
 
@@ -172,7 +203,7 @@ def connect_to_db(app):
     """Connect the database to our Flask app."""
 
     # Configure to use PostgreSQL database
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///game'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///liarsdice'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.app = app
     db.init_app(app)
@@ -187,4 +218,14 @@ if __name__ == "__main__":
     db.create_all()
 
     #### for testing ####
-    m = make_players(5, 'e')
+    # m = make_players(5, 'e')
+    # a = Human('a')
+    # b = Human('b')
+    # c = Human('c')
+
+    # d = AI('d', 'e')
+    # e = AI('e', 'm')
+    # f = AI('f', 'h')
+
+    # db.session.add_all([a, b, c, d, e, f])
+    # db.session.commit()

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1> Welcome to Liar's Dice! </h1>
+<form action='/signup', method='POST'>
+    Enter your email address: <input type='text' name='username' required> <br>
+    Enter a password: <input type='password' name='password' required> <br>
+    What is your name?: <input type='text' name='name' required> <br>
+    What is your date of birth?: <input type='date' name='dob' required> <br>
+    <input type="submit" value="Sign Up!">
+</form>
+
+{% endblock %}

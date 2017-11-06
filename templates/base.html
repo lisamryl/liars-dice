@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+    <title>Play Liar's Dice</title>
+    <!-- <link rel="stylesheet" href="/static/styles.css"> -->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+</head>
+<body>
+Liar's Dice
+  {% if session.get('user_id') %}
+        <a href="/logout">Log Out</a>
+  {% else %}
+        <a href="/login">Sign In</a> <a href="/register">New User? Sign Up</a>
+  {% endif %}
+
+  <ul>
+    {% for message in get_flashed_messages() %}
+    {{ message }}
+    {% endfor %}
+  </ul>
+
+{% block content %} put your content here {% endblock %}
+<!-- <script src="/static/liarsdice.js"></script> -->
+</body>
+</html>
