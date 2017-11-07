@@ -73,6 +73,7 @@ class AbstractPlayer(db.Model):
 
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     game_id = db.Column(db.Integer, db.ForeignKey('games.id'), nullable=False)
+    name = db.Column(db.String(50), nullable=False)
     position = db.Column(db.Integer, nullable=False)
     final_place = db.Column(db.Integer)
     #will need if no current die roll but die count
@@ -88,10 +89,12 @@ class AbstractPlayer(db.Model):
     #For joined table inheritance
     # __mapper_args__ = {'polymorphic_identity': 'player', 'polymorphic_on': type}
 
-    def __init__(self, name, player_type):
+    def __init__(self, name, game_id, position):
+        self.game_id = game_id
         self.name = name
+        self.position = position
+        self.final_place = None
         self.die_count = 5
-        self.player_type = player_type
         self.created_at = datetime.now()
         self.last_played = datetime.now()
 
@@ -126,8 +129,9 @@ class Human(AbstractPlayer):
 
     user = db.relationship("User", backref=db.backref("humans"))
 
-    def __init__(self, name):
-        return super(Human, self).__init__(name, "human")
+    def __init__(self, name, user_id, game_id, position):
+        AbstractPlayer.__init__(self, name, game_id, position)
+        self.user_id = user_id
 
     def __repr__(self):
         # return '<id {} username {} die_count {} >'.format(
@@ -149,13 +153,15 @@ class AI(AbstractPlayer):
     aggressive_factor = db.Column(db.Float, nullable=False)
     intelligence_factor = db.Column(db.Float, nullable=False)
 
-    def __init__(self, name, difficulty):
+    def __init__(self, name, difficulty, game_id, position):
+        AbstractPlayer.__init__(self, name, game_id, position)
         # set liar stats (based on normal dist, 12.5% ave, 2.5% var)
-        self.liar_factor = min(max(numpy.random.normal(.125, .025), 0), 1)
+        self.liar_factor = round(min(max(numpy.random.normal(.125, .025),
+                                         0), 1), 3)
         # set aggressive factor (based on normal dist, 40% ave, 14% var
         # plus additional mean bump for liar (aka. bigger liar, more aggression)
-        self.aggressive_factor = min(max(numpy.random.normal(
-            .4 + self.liar_factor, .14), 0), 1)
+        self.aggressive_factor = round(min(max(numpy.random.normal(
+            .4 + self.liar_factor, .14), 0), 1), 3)
         # set intelligence factor (based on normal dist with mean
         # based on difficulty: E: 35%, M: 60%, H: 85%, less aggr. factor
         # (aka. more aggr, less intell)). Var is 3%.
@@ -165,8 +171,8 @@ class AI(AbstractPlayer):
             self.intelligence_mean = .6
         else:
             self.intelligence_mean = .85
-        self.intelligence_factor = min(max(numpy.random.normal(
-            self.intelligence_mean - self.aggressive_factor/10, .03), 0), 1)
+        self.intelligence_factor = round(min(max(numpy.random.normal(
+            self.intelligence_mean - self.aggressive_factor/10, .03), 0), 1), 3)
 
     def __repr__(self):
         return '<id {} l stat {} a stat {} i stat {} die_count {} >'.format(
@@ -175,25 +181,6 @@ class AI(AbstractPlayer):
             self.aggressive_factor,
             self.intelligence_factor,
             self.players.die_count)
-
-        # #for testing without numpy
-        # self.liar_factor = .3
-        # self.aggressive_factor = .4
-        # self.intelligence_factor = .5
-        # return super(AI, self).__init__(name, "AI")
-
-
-def make_players(num_players, difficulty):
-    """Make players from Player/Opponent class, based on player num and difficulty"""
-    all_players = []
-
-    #need to change name after buiding front end
-    all_players.append(Human("Test Name"))
-
-    for i in range(1, num_players):
-        all_players.append(AI("opponent_" + str(i), difficulty))
-
-    return all_players
 
 ##############################################################################
 # Helper functions

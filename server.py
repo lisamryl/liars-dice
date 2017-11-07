@@ -19,6 +19,30 @@ app.secret_key = "ABC"
 app.jinja_env.undefined = StrictUndefined
 
 
+def create_new_game(num_players, difficulty, user_id):
+    """Create new game, create players, and save to DB"""
+    #Create new Game object
+    new_game = Game(num_players=num_players, difficulty=difficulty)
+    db.session.add(new_game)
+    db.session.commit()
+
+    game_id = Game.query.order_by('created_at desc').first().id
+    #Create new Player object (based on signed in user information)
+    user_info = User.query.filter(User.username == user_id).first()
+    player = Human(user_info.name, user_info.id, game_id, 1)
+    db.session.add(player)
+
+    #Create new AI objects
+    for i in range(1, num_players):
+        AI_i = AI("opponent_" + str(i), difficulty, game_id, i + 1)  # eventually randomly generate an Opp name
+        db.session.add(AI_i)
+    db.session.commit()
+
+
+
+    #return 
+
+
 @app.route('/')
 def index():
     """Homepage."""
@@ -111,6 +135,20 @@ def create_game():
 
     return render_template("create_game.html")
 
+
+@app.route('/playgame', methods=['POST'])
+def play_game():
+    """Play the liar's dice game!"""
+
+    num_players = int(request.form.get("num-players"))
+    difficulty = request.form.get("difficulty")
+    user_id = session['user_id']  # if none, don't allow saving...
+
+    create_new_game(num_players, difficulty, user_id)
+
+    return render_template("play_game.html",
+                           num_player=num_players,
+                           difficulty=difficulty)
 
 
 if __name__ == "__main__":
