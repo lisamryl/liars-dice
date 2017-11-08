@@ -4,6 +4,7 @@ from flask import (Flask, render_template, redirect, request, flash,
                    session, jsonify)
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_sqlalchemy import SQLAlchemy
+
 from model import User, Game, AbstractPlayer, Human, AI, db, connect_to_db
 
 
@@ -19,14 +20,21 @@ app.secret_key = "ABC"
 app.jinja_env.undefined = StrictUndefined
 
 
+def get_players_in_game(game_id):
+    """Get player objects for all players associated with game_id."""
+
+    return AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id).all()
+
+
 def create_new_game(num_players, difficulty, user_id):
-    """Create new game, create players, and save to DB"""
+    """Create new game, create players, and save to DB. Return new game object"""
     #Create new Game object
     new_game = Game(num_players=num_players, difficulty=difficulty)
     db.session.add(new_game)
     db.session.commit()
 
-    game_id = Game.query.order_by('created_at desc').first().id
+    game = Game.query.order_by('created_at desc').first()
+    game_id = game.id
     #Create new Player object (based on signed in user information)
     user_info = User.query.filter(User.username == user_id).first()
     player = Human(user_info.name, user_info.id, game_id, 1)
@@ -38,9 +46,7 @@ def create_new_game(num_players, difficulty, user_id):
         db.session.add(AI_i)
     db.session.commit()
 
-
-
-    #return 
+    return game
 
 
 @app.route('/')
@@ -136,19 +142,49 @@ def create_game():
     return render_template("create_game.html")
 
 
-@app.route('/playgame', methods=['POST'])
-def play_game():
-    """Play the liar's dice game!"""
+@app.route('/game', methods=['POST'])
+def setup_game():
+    """Setup the liar's dice game and players, and render the game page."""
 
     num_players = int(request.form.get("num-players"))
     difficulty = request.form.get("difficulty")
     user_id = session['user_id']  # if none, don't allow saving...
 
-    create_new_game(num_players, difficulty, user_id)
+    game = create_new_game(num_players, difficulty, user_id)
+
+    url = '/game/{id}'.format(id=game.id)
+    return redirect(url)
+
+
+@app.route('/game/<game_id>')
+def play_game(game_id):
+    """Page for game play."""
+    game = Game.query.filter(Game.id == game_id).first()
+
+    players = get_players_in_game(game.id)
+
+    total_dice = 0
+    for player in players:
+        total_dice += player.die_count  # eventually change to sqlalchemy query (with sum)
 
     return render_template("play_game.html",
-                           num_player=num_players,
-                           difficulty=difficulty)
+                           game=game,
+                           players=players,
+                           total_dice=total_dice)  # note eventually want the game to be played in the /game_id link
+
+
+#AJAX routes
+@app.route('/rolldice', methods=['POST'])
+def roll_dice():
+    game_id = request.form.get('game_id')
+    print game_id
+    """Get list of players by game id, and roll dice for all players."""
+    players = get_players_in_game(game_id)
+
+    for player in players:
+        player.roll_dice()
+        
+    return jsonify(players)
 
 
 if __name__ == "__main__":

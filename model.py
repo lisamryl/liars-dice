@@ -46,7 +46,7 @@ class Game(db.Model):
     num_players = db.Column(db.Integer, nullable=False)
     turn_marker = db.Column(db.Integer, nullable=False)
     is_finished = db.Column(db.Boolean, nullable=False)
-    #bid_history = db.Column(db.ARRAY)  ### note: check  with katie on this
+    bid_history = db.Column(db.ARRAY(db.String(10)))  ### note: change later to tuple type
     difficulty = db.Column(db.String(1), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
     last_saved = db.Column(db.DateTime, nullable=False)
@@ -80,9 +80,8 @@ class AbstractPlayer(db.Model):
     die_count = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
     last_played = db.Column(db.DateTime, nullable=False)
-
     #if turn is in progress
-    #current_die_roll = db.Column(db.ARRAY(Integer)) ### note: check  with katie on this
+    current_die_roll = db.Column(db.ARRAY(db.Integer))
 
     game = db.relationship("Game", backref=db.backref("players"))
 
@@ -105,13 +104,14 @@ class AbstractPlayer(db.Model):
 
 
         Creates a list of rolled dice for the remaining dice of the object.
-        Returns a list of the dice rolled (for instance, if there are 5 dice,
+        Stores list of dice rolled in the db (for instance, if there are 5 dice,
         it returns a roll of 5 dice, where each is a random number from 1-6).
         """
         roll = []
         for x in range(0, self.num_dice):
             roll.append(randint(1, 6))
-        return roll
+        self.current_die_roll = roll
+        db.session.commit()
 
 
 class Human(AbstractPlayer):
@@ -129,14 +129,15 @@ class Human(AbstractPlayer):
 
     user = db.relationship("User", backref=db.backref("humans"))
 
+    player = db.relationship("AbstractPlayer", backref=db.backref("human", uselist=False))
+
     def __init__(self, name, user_id, game_id, position):
         AbstractPlayer.__init__(self, name, game_id, position)
         self.user_id = user_id
 
     def __repr__(self):
-        # return '<id {} username {} die_count {} >'.format(
-        #     self.id, self.user.username, self.players.die_count)
-        return '<id {} >'.format(self.id)
+        return '<id {} username {} die_count {} >'.format(
+            self.id, self.user.username, self.players.die_count)
 
 
 class AI(AbstractPlayer):
@@ -148,6 +149,8 @@ class AI(AbstractPlayer):
 
     # __mapper_args__ = {'polymorphic_identity': 'computer'}
     __table_args__ = {'extend_existing': True}
+
+    player = db.relationship("AbstractPlayer", backref=db.backref("comp", uselist=False))
 
     liar_factor = db.Column(db.Float, nullable=False)
     aggressive_factor = db.Column(db.Float, nullable=False)
@@ -203,16 +206,3 @@ if __name__ == "__main__":
     connect_to_db(app)
     print "Connected to DB."
     db.create_all()
-
-    #### for testing ####
-    # m = make_players(5, 'e')
-    # a = Human('a')
-    # b = Human('b')
-    # c = Human('c')
-
-    # d = AI('d', 'e')
-    # e = AI('e', 'm')
-    # f = AI('f', 'h')
-
-    # db.session.add_all([a, b, c, d, e, f])
-    # db.session.commit()

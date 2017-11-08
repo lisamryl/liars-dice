@@ -4,5 +4,30 @@
 <h1> Let's Play Liar's Dice </h1>
 <img src="/static/table.png">
 
+<!-- note have players, game, total dice -->
+<br>
+<button class='roll-dice'>Roll Dice</button>
+
+<h2> Player List: </h2>
+<ul name='player-details'>
+{% for player in players %}
+    <li>Name: {{ player.name }}; Die Count: {{ player.die_count }};
+        Position: {{ player.position }}
+        Die Roll: {{ player.current_die_roll }}
+        {% if player.comp %}
+        Liar: {{ player.comp.liar_factor }}
+        Aggr: {{ player.comp.aggressive_factor }}
+        Intel: {{ player.comp.intelligence_factor }}
+        {% endif %}
+    </li>
+{% endfor %}
+</ul>
+
+<h2> Difficulty: {{ game.difficulty }}</h2>
+
+<h2> Total Dice: {{ total_dice }} </h2>
+
+<h2> Current Turn: {{ game.turn_marker }} </h2>
+
 
 {% endblock %}
