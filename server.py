@@ -6,7 +6,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from flask_sqlalchemy import SQLAlchemy
 
 from model import User, Game, AbstractPlayer, Human, AI, db, connect_to_db
-
+from game_play import *
 
 app = Flask(__name__)
 # app.config['JSON_SORT_KEYS'] = False
@@ -18,35 +18,6 @@ app.secret_key = "ABC"
 # silently. This is horrible. Fix this so that, instead, it raises an
 # error.
 app.jinja_env.undefined = StrictUndefined
-
-
-def get_players_in_game(game_id):
-    """Get player objects for all players associated with game_id."""
-
-    return AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id).all()
-
-
-def create_new_game(num_players, difficulty, user_id):
-    """Create new game, create players, and save to DB. Return new game object"""
-    #Create new Game object
-    new_game = Game(num_players=num_players, difficulty=difficulty)
-    db.session.add(new_game)
-    db.session.commit()
-
-    game = Game.query.order_by('created_at desc').first()
-    game_id = game.id
-    #Create new Player object (based on signed in user information)
-    user_info = User.query.filter(User.username == user_id).first()
-    player = Human(user_info.name, user_info.id, game_id, 1)
-    db.session.add(player)
-
-    #Create new AI objects
-    for i in range(1, num_players):
-        AI_i = AI("opponent_" + str(i), difficulty, game_id, i + 1)  # eventually randomly generate an Opp name
-        db.session.add(AI_i)
-    db.session.commit()
-
-    return game
 
 
 @app.route('/')
@@ -163,9 +134,7 @@ def play_game(game_id):
 
     players = get_players_in_game(game.id)
 
-    total_dice = 0
-    for player in players:
-        total_dice += player.die_count  # eventually change to sqlalchemy query (with sum)
+    total_dice = get_total_dice(players)
 
     return render_template("play_game.html",
                            game=game,
@@ -176,15 +145,32 @@ def play_game(game_id):
 #AJAX routes
 @app.route('/rolldice', methods=['POST'])
 def roll_dice():
-    game_id = request.form.get('game_id')
-    print game_id
     """Get list of players by game id, and roll dice for all players."""
+    game_id = request.form.get('game_id')
     players = get_players_in_game(game_id)
-
+    player_info = {}
     for player in players:
         player.roll_dice()
-        
-    return jsonify(players)
+        player_info[player.id] = player.current_die_roll
+
+    return jsonify(player_info)
+
+
+@app.route('/startbid', methods=['POST'])
+def bidding():
+    """Start the bidding for a human/computer"""
+
+    #if human, show form on front end and get bid information, if computer, calc
+    #bid odds and determine resulting bid
+    game_id = request.form.get('game_id')
+    game = Game.query.filter(Game.game_id == game_id).first()
+    # players = get_players_in_game(game_id)
+    player = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id,
+                                         AbstractPlayer.position == game.turn_marker).first()
+    print player
+    requests = {}
+    return jsonify(requests)
+    # return jsonify(player_info)
 
 
 if __name__ == "__main__":

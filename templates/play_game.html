@@ -9,11 +9,11 @@
 <button class='roll-dice'>Roll Dice</button>
 
 <h2> Player List: </h2>
-<ul name='player-details'>
+<ul id='player-details'>
 {% for player in players %}
     <li>Name: {{ player.name }}; Die Count: {{ player.die_count }};
         Position: {{ player.position }}
-        Die Roll: {{ player.current_die_roll }}
+        <span id='die-roll-{{ player.id }}'>Die Roll: {{ player.current_die_roll }}</span>
         {% if player.comp %}
         Liar: {{ player.comp.liar_factor }}
         Aggr: {{ player.comp.aggressive_factor }}
@@ -22,12 +22,76 @@
     </li>
 {% endfor %}
 </ul>
-
-<h2> Difficulty: {{ game.difficulty }}</h2>
+<h2>Bidding Action</h2>
+<table>
+<tr>
+<th>Die</th>
+<th># of Dice</th>
+</tr>
+<tr>
+<td class='die-choice'></td>
+<td class='die-count'></td>
+</tr>
+</table>
+<br>
+<button class='start-bid'>Start Player Bidding</button>
+<br>
+<form id='bid-form' action='/bid', method='POST'>
+Which die do you want to bid on? 
+    <select name = 'player-die-choice'>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+    </select><br>
+How many do you want to bid?
+    <select name = 'player-die-choice'>
+        <option value="1">1 die</option>
+        <option value="2">2 dice</option>
+        <option value="3">3 dice</option>
+        <option value="4">4 dice</option>
+        <option value="5">5 dice</option>
+        <option value="6">6 dice</option>
+        <option value="7">7 dice</option>
+        <option value="8">8 dice</option>
+        <option value="9">9 dice</option>
+        <option value="10">10 dice</option>
+        <option value="11">11 dice</option>
+        <option value="12">12 dice</option>
+        <option value="13">13 dice</option>
+        <option value="10">10 dice</option>
+        <option value="11">11 dice</option>
+        <option value="12">12 dice</option>
+        <option value="13">13 dice</option>
+        <option value="14">14 dice</option>
+        <option value="15">15 dice</option>
+        <option value="16">16 dice</option>
+        <option value="17">17 dice</option>
+        <option value="18">18 dice</option>
+        <option value="19">19 dice</option>
+        <option value="20">20 dice</option>
+        <option value="21">21 dice</option>
+        <option value="22">22 dice</option>
+        <option value="23">23 dice</option>
+        <option value="24">24 dice</option>
+        <option value="25">25 dice</option>
+        <option value="26">26 dice</option>
+        <option value="27">27 dice</option>
+        <option value="28">28 dice</option>
+        <option value="29">29 dice</option>
+        <option value="30">30 dice</option>
+    </select><br>
+    <input type="submit" value="Bid!">
+</form>
+<br>
 
 <h2> Total Dice: {{ total_dice }} </h2>
 
 <h2> Current Turn: {{ game.turn_marker }} </h2>
+
+<h2> Difficulty: {{ game.difficulty }}</h2>
+
 
 
 {% endblock %}

@@ -1,14 +1,30 @@
 import numpy
+from scipy.stats import binom
 from random import randint
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from collections import Counter  # remove import after AI logic is changed
 
+from bidding import get_prob_mapping
 
 db = SQLAlchemy()
 
 
 ################################################################################
 #Model definitions
+
+def get_total_dice(players):
+    """Get total # of dice left in the game."""
+    total_dice = 0
+    for player in players:
+        total_dice += player.die_count  # eventually change to sqlalchemy query (with sum)
+    return total_dice
+
+
+def get_players_in_game(game_id):
+    """Get player objects for all players associated with game_id."""
+
+    return AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id).all()
 
 
 class User(db.Model):
@@ -46,7 +62,7 @@ class Game(db.Model):
     num_players = db.Column(db.Integer, nullable=False)
     turn_marker = db.Column(db.Integer, nullable=False)
     is_finished = db.Column(db.Boolean, nullable=False)
-    bid_history = db.Column(db.ARRAY(db.String(10)))  ### note: change later to tuple type
+    bid_history = db.Column(db.ARRAY(db.String(10)))  # note: change later to tuple type
     difficulty = db.Column(db.String(1), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
     last_saved = db.Column(db.DateTime, nullable=False)
@@ -82,11 +98,9 @@ class AbstractPlayer(db.Model):
     last_played = db.Column(db.DateTime, nullable=False)
     #if turn is in progress
     current_die_roll = db.Column(db.ARRAY(db.Integer))
+    ## store most recent bid or a new table......
 
-    game = db.relationship("Game", backref=db.backref("players"))
-
-    #For joined table inheritance
-    # __mapper_args__ = {'polymorphic_identity': 'player', 'polymorphic_on': type}
+    game = db.relationship("Game", backref=db.backref("players"), order_by=id)
 
     def __init__(self, name, game_id, position):
         self.game_id = game_id
@@ -108,7 +122,7 @@ class AbstractPlayer(db.Model):
         it returns a roll of 5 dice, where each is a random number from 1-6).
         """
         roll = []
-        for x in range(0, self.num_dice):
+        for x in range(0, self.die_count):
             roll.append(randint(1, 6))
         self.current_die_roll = roll
         db.session.commit()
@@ -121,15 +135,16 @@ class Human(AbstractPlayer):
 
     id = db.Column(db.Integer, db.ForeignKey('players.id'), primary_key=True)
 
-    # __mapper_args__ = {'polymorphic_identity': 'human'}
     __table_args__ = {'extend_existing': True}
 
     #make nullable = true for users who don't log in
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    user = db.relationship("User", backref=db.backref("humans"))
+    user = db.relationship("User", backref=db.backref("humans"), order_by=id)
 
-    player = db.relationship("AbstractPlayer", backref=db.backref("human", uselist=False))
+    player = db.relationship("AbstractPlayer",
+                             backref=db.backref("human", uselist=False),
+                             order_by=id)
 
     def __init__(self, name, user_id, game_id, position):
         AbstractPlayer.__init__(self, name, game_id, position)
@@ -147,10 +162,11 @@ class AI(AbstractPlayer):
 
     id = db.Column(db.Integer, db.ForeignKey('players.id'), primary_key=True)
 
-    # __mapper_args__ = {'polymorphic_identity': 'computer'}
     __table_args__ = {'extend_existing': True}
 
-    player = db.relationship("AbstractPlayer", backref=db.backref("comp", uselist=False))
+    player = db.relationship("AbstractPlayer",
+                             backref=db.backref("comp", uselist=False),
+                             order_by=id)
 
     liar_factor = db.Column(db.Float, nullable=False)
     aggressive_factor = db.Column(db.Float, nullable=False)
@@ -177,13 +193,57 @@ class AI(AbstractPlayer):
         self.intelligence_factor = round(min(max(numpy.random.normal(
             self.intelligence_mean - self.aggressive_factor/10, .03), 0), 1), 3)
 
+    def to_challenge(self, current_bid, total_dice):
+        """Determine if AI should challenge the bid or not."""
+        #logic change after MVP
+        if current_bid is not None:
+            prob_mapping = get_prob_mapping(total_dice, self.current_die_roll)
+            if prob_mapping[current_bid[0]][current_bid[1]] < 0.05:  # 5% for now
+                return True
+        return False
+
+    def to_call_exact(self, current_bid, total_dice):
+        """Determine if AI should call exact on the bid or not."""
+        #logic change after MVP, for now, use false
+        return False
+
+    def bidding(self):
+        """Bidding process for AI."""
+        #Get game, players, and specific player objects for this AI
+        game = Game.query.filter(Game.id == self.game_id).first()
+        players = get_players_in_game(self.game_id)
+        #need to confirm this will actually fail
+        try:
+            current_bid = game.bid_history[-1]
+        except:
+            current_bid = None
+        current_die_roll = self.current_die_roll
+        total_dice = get_total_dice(players)
+        #note the below logic will change after MVP is complete!!!!!
+
+        #check if should challenge (add exact later on)
+        if self.to_challenge(current_bid, total_dice) is True:
+            return "Challenge"
+        if self.to_call_exact(current_bid, total_dice) is True:
+            return "Exact"
+
+        # syntax from Stack Overflow search
+        count = Counter(current_die_roll)
+        die_choice = max(current_die_roll, key=count.get)
+        if current_bid is None:
+            die_count = total_dice / len(players)
+        else:
+            die_count = current_bid[1] + 1
+        #end MVP logic
+        return tuple([die_choice, die_count])
+
     def __repr__(self):
         return '<id {} l stat {} a stat {} i stat {} die_count {} >'.format(
             self.id,
             self.liar_factor,
             self.aggressive_factor,
             self.intelligence_factor,
-            self.players.die_count)
+            self.player.die_count)
 
 ##############################################################################
 # Helper functions
