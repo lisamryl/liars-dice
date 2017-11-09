@@ -1,6 +1,7 @@
 from random import randint
 from scipy.stats import binom
 
+
 ##functions
 def get_prob_mapping(total_dice, current_die_roll):
     prob_mapping = {}
@@ -21,7 +22,7 @@ def get_prob_mapping(total_dice, current_die_roll):
     prob_mapping_by_die = {}
     for die in range(2, 7):
         prob_mapping_by_die[die] = {}
-        count = current_die_roll.count(die)
+        count = current_die_roll.count(die) + current_die_roll.count(1)
         for key in prob_mapping.keys():
             if count > key:
                 #if count < key, fill in missing probabilities with 1 (since we
@@ -33,8 +34,8 @@ def get_prob_mapping(total_dice, current_die_roll):
     return prob_mapping_by_die
 
 
-# testing = get_prob_mapping(25, [6, 6, 3, 5, 4])
-# print testing
+testing = get_prob_mapping(25, [6, 6, 3, 5, 4])
+print testing
 
 # def next_turn(turn_marker, count):
 #     """

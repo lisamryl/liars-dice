@@ -62,7 +62,6 @@ class Game(db.Model):
     num_players = db.Column(db.Integer, nullable=False)
     turn_marker = db.Column(db.Integer, nullable=False)
     is_finished = db.Column(db.Boolean, nullable=False)
-    bid_history = db.Column(db.ARRAY(db.String(10)))  # note: change later to tuple type
     difficulty = db.Column(db.String(1), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
     last_saved = db.Column(db.DateTime, nullable=False)
@@ -94,10 +93,11 @@ class AbstractPlayer(db.Model):
     final_place = db.Column(db.Integer)
     #will need if no current die roll but die count
     die_count = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False)
-    last_played = db.Column(db.DateTime, nullable=False)
     #if turn is in progress
     current_die_roll = db.Column(db.ARRAY(db.Integer))
+    created_at = db.Column(db.DateTime, nullable=False)
+    last_played = db.Column(db.DateTime, nullable=False)
+
     ## store most recent bid or a new table......
 
     game = db.relationship("Game", backref=db.backref("players"), order_by=id)
@@ -156,7 +156,7 @@ class Human(AbstractPlayer):
 
 
 class AI(AbstractPlayer):
-    "Opponent in the game (controlled by AI)"
+    """Opponent in the game (controlled by AI)"""
 
     __tablename__ = "computers"
 
@@ -219,7 +219,6 @@ class AI(AbstractPlayer):
             current_bid = None
         current_die_roll = self.current_die_roll
         total_dice = get_total_dice(players)
-        #note the below logic will change after MVP is complete!!!!!
 
         #check if should challenge (add exact later on)
         if self.to_challenge(current_bid, total_dice) is True:
@@ -227,6 +226,7 @@ class AI(AbstractPlayer):
         if self.to_call_exact(current_bid, total_dice) is True:
             return "Exact"
 
+        #note the below logic will change after MVP is complete!!!!!
         # syntax from Stack Overflow search
         count = Counter(current_die_roll)
         die_choice = max(current_die_roll, key=count.get)
@@ -244,6 +244,22 @@ class AI(AbstractPlayer):
             self.aggressive_factor,
             self.intelligence_factor,
             self.player.die_count)
+
+
+class BidHistory(db.Model):
+    """Class for keeping track of current game bid history."""
+
+    __tablename__ = "bids"
+
+    id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    game_id = db.Column(db.Integer, db.ForeignKey('games.id'), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey('players.id'), nullable=False)
+    die_choice = db.Column(db.Integer, nullable=False)
+    die_count = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+
+    game = db.relationship("Game", backref=db.backref("bids"), order_by=id)
+    player = db.relationship("AbstractPlayer", backref=db.backref("bids"), order_by=id)
 
 ##############################################################################
 # Helper functions
