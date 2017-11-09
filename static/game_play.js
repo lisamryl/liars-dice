@@ -21,10 +21,15 @@ function rollDice(request) {
 }
 
 
-function showBid(request) {
+function handleBid(request) {
 
-
-}
+$('#bids').append(
+    `<tr>
+    <td class='player-name'>${request['name']}</td>
+    <td class='die-choice'>${request['die_choice']}</td>
+    <td class='die-count'>${request['die_count']}</td>
+    </tr>`)
+};
 
 $('.roll-dice').on('click', function () {
 
@@ -35,7 +40,6 @@ $('.roll-dice').on('click', function () {
 
 $('.start-bid').on('click', function () {
     let game_id = get_game_id(window.location);
-    $.post('/startbid', {'game_id': game_id}, showBid);
-
-}
+    $.post('/startbid', {'game_id': game_id}, handleBid);
+});
 

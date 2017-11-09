@@ -34,18 +34,24 @@ def get_prob_mapping(total_dice, current_die_roll):
     return prob_mapping_by_die
 
 
-testing = get_prob_mapping(25, [6, 6, 3, 5, 4])
-print testing
+# testing = get_prob_mapping(25, [6, 6, 3, 5, 4])
+# print testing
 
-# def next_turn(turn_marker, count):
-#     """
-#     Given the current turn, return the next turn.
+def round_over():
+    """Clean up post round over (clear bid history)"""
 
 
-#     Given the current turn, get the next turn. Return the index of the next
-#     player/opponent's turn.
-#     """
-#     return (turn_marker + 1) % (count + 1)
+def get_next_turn(turn_marker, num_players):
+    """
+    Given the current turn, return the next turn.
+
+
+    Return the position of the next player/opponent's turn.
+    """
+    if turn_marker == num_players:
+        return 1
+    else:
+        return turn_marker + 1
 
 
 # def get_current_bet(current_turn, previous_bet):
@@ -149,12 +155,4 @@ print testing
 # # current_die_count = None
 
 # ##note need to handle when players are no longer in the game.
-
-
-
-
-
-
-
-
 

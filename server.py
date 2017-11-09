@@ -163,14 +163,18 @@ def bidding():
     #if human, show form on front end and get bid information, if computer, calc
     #bid odds and determine resulting bid
     game_id = request.form.get('game_id')
-    game = Game.query.filter(Game.game_id == game_id).first()
+    game = Game.query.filter(Game.id == game_id).first()
     # players = get_players_in_game(game_id)
     player = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id,
                                          AbstractPlayer.position == game.turn_marker).first()
-    print player
-    requests = {}
+    if player.comp:
+        bid = player.comp.bidding()
+    else:
+        bid = player.human.bidding()
+    requests = {'name': player.name,
+                'die_choice': bid.die_choice,
+                'die_count': bid.die_count}
     return jsonify(requests)
-    # return jsonify(player_info)
 
 
 if __name__ == "__main__":

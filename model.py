@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from collections import Counter  # remove import after AI logic is changed
 
-from bidding import get_prob_mapping
+from bidding import get_prob_mapping, get_next_turn
 
 db = SQLAlchemy()
 
@@ -125,6 +125,7 @@ class AbstractPlayer(db.Model):
         for x in range(0, self.die_count):
             roll.append(randint(1, 6))
         self.current_die_roll = roll
+        self.last_saved = datetime.now()
         db.session.commit()
 
 
@@ -193,12 +194,13 @@ class AI(AbstractPlayer):
         self.intelligence_factor = round(min(max(numpy.random.normal(
             self.intelligence_mean - self.aggressive_factor/10, .03), 0), 1), 3)
 
-    def to_challenge(self, current_bid, total_dice):
+    def to_challenge(self, curr_bid, total_dice):
         """Determine if AI should challenge the bid or not."""
         #logic change after MVP
-        if current_bid is not None:
+        if curr_bid is not None:
             prob_mapping = get_prob_mapping(total_dice, self.current_die_roll)
-            if prob_mapping[current_bid[0]][current_bid[1]] < 0.05:  # 5% for now
+            print "current bid in to challenge {}".format(curr_bid)
+            if prob_mapping[curr_bid.die_choice][curr_bid.die_count] < 0.05:  # 5% for now
                 return True
         return False
 
@@ -209,14 +211,15 @@ class AI(AbstractPlayer):
 
     def bidding(self):
         """Bidding process for AI."""
-        #Get game, players, and specific player objects for this AI
+        #Get current bid for this AI by looking for most recent bid for the game
+        #return none if there's no current bid
+        current_bid = (BidHistory.query
+                                 .filter(BidHistory.game_id == self.game_id)
+                                 .order_by(BidHistory.created_at.desc())
+                                 .first())
         game = Game.query.filter(Game.id == self.game_id).first()
         players = get_players_in_game(self.game_id)
         #need to confirm this will actually fail
-        try:
-            current_bid = game.bid_history[-1]
-        except:
-            current_bid = None
         current_die_roll = self.current_die_roll
         total_dice = get_total_dice(players)
 
@@ -233,9 +236,24 @@ class AI(AbstractPlayer):
         if current_bid is None:
             die_count = total_dice / len(players)
         else:
-            die_count = current_bid[1] + 1
+            die_count = current_bid.die_count + 1
         #end MVP logic
-        return tuple([die_choice, die_count])
+
+        #save bid
+        new_bid = BidHistory(self.game_id, self.id, die_choice, die_count)
+        db.session.add(new_bid)
+        db.session.commit()
+
+        #update turn marker
+        next_turn = get_next_turn(self.position, len(players))
+        print next_turn
+        game.turn_marker = next_turn
+        db.session.commit()
+        print game.turn_marker
+        game.last_saved = datetime.now()
+        db.session.commit()
+
+        return new_bid
 
     def __repr__(self):
         return '<id {} l stat {} a stat {} i stat {} die_count {} >'.format(
@@ -260,6 +278,13 @@ class BidHistory(db.Model):
 
     game = db.relationship("Game", backref=db.backref("bids"), order_by=id)
     player = db.relationship("AbstractPlayer", backref=db.backref("bids"), order_by=id)
+
+    def __init__(self, game_id, player_id, die_choice, die_count):
+        self.game_id = game_id
+        self.player_id = player_id
+        self.die_choice = die_choice
+        self.die_count = die_count
+        self.created_at = datetime.now()
 
 ##############################################################################
 # Helper functions
