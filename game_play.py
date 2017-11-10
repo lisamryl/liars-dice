@@ -1,4 +1,4 @@
-from model import User, Game, AbstractPlayer, Human, AI, db
+from model import User, Game, AbstractPlayer, Human, AI, BidHistory, db
 
 
 ###functions
@@ -54,3 +54,11 @@ def get_players_in_game(game_id):
     """Get player objects for all players associated with game_id."""
 
     return AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id).all()
+
+def get_name_of_current_turn_player(game):
+    """Given a game object, returns the player object of the current turn."""
+    current_turn_player = (AbstractPlayer
+                           .query
+                           .filter(AbstractPlayer.position == game.turn_marker)
+                           .first())
+    return current_turn_player

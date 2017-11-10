@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% block content %}
 
+<!-- instructions mainly found here https://www.wikihow.com/Play-Liar%27s-Dice -->
+
 <h2> Instructions </h2>
 <h3>Initial Setup</h3>
 <p> Each player will start with 5 6-faced dice. Players can look at their own dice, but they shouldn't be able to see anybody else's. After you peek at your dice, based on what you found you can make a call about how many of any number of dice there are on the table. 
@@ -10,6 +12,17 @@ In this game, 1s are wild, meaning that they will be counted towards the total d
 <h3>Bidding</h3>
 <p>The calls must be in order to the player on the left. If somebody else makes a higher call than you, you can raise yours, but only if the player that raises it is on the left. The hands are ranked first by amount, number of dice (5 4's), then by value, dots on the face (5 4's). So, (2, 3's) are better that (2, 2's) but not (3, 2's)</p>
 
-    <!-- more instructions here https://www.wikihow.com/Play-Liar%27s-Dice -->
+<p>Eventually somebody will make what the next player believes to be an impossible call. That person will call <b>Challenge!</b> instead of making a bid. For instance, they might say there are six 6s when there are only eight dice on the table and the other player can see none of his are 6's, and somebody will say the caller is a liar. At that point, the dice are revealed.
+<ul>
+<li>If you call somebody a liar and you were wrong, you lose a die.</li>
+<li>If you call someone a liar and they were lying, they lose a die.</li>
+</ul>
+</p>
 
+<p>You may also call <b>Exact!</b>. This means that the current bid is exactly correct. Therefore, if a player bid 10 5s, and it's your turn, if you call exact, you win if there are exactly 10 5s. If there are more or less than 10 5s, you lose a die. If you win, you <i><b>gain</b></i> a die (if the total dice in play is less that what the game started with - i.e. if you started with 30 dice, and there were 25 left when you made the call, you'd gain a die, but if there were 30 left, you wouldn't).</p>
+
+<h3>Ending the Game</h3>
+<p>If a player runs out of dice, they're out of the game. The rest of the players continue to play until there are no players in the game. When there are no longer any players in the game, the remaining player is the winner!</p>
+
+<h3><a href="/">Return to Home Page</a></h3>
 {% endblock %}

@@ -199,7 +199,6 @@ class AI(AbstractPlayer):
         #logic change after MVP
         if curr_bid is not None:
             prob_mapping = get_prob_mapping(total_dice, self.current_die_roll)
-            print "current bid in to challenge {}".format(curr_bid)
             if prob_mapping[curr_bid.die_choice][curr_bid.die_count] < 0.05:  # 5% for now
                 return True
         return False
@@ -219,7 +218,7 @@ class AI(AbstractPlayer):
                                  .first())
         game = Game.query.filter(Game.id == self.game_id).first()
         players = get_players_in_game(self.game_id)
-        #need to confirm this will actually fail
+
         current_die_roll = self.current_die_roll
         total_dice = get_total_dice(players)
 
@@ -233,6 +232,8 @@ class AI(AbstractPlayer):
         # syntax from Stack Overflow search
         count = Counter(current_die_roll)
         die_choice = max(current_die_roll, key=count.get)
+        if die_choice == 1:
+            die_choice = 2
         if current_bid is None:
             die_count = total_dice / len(players)
         else:
@@ -246,10 +247,7 @@ class AI(AbstractPlayer):
 
         #update turn marker
         next_turn = get_next_turn(self.position, len(players))
-        print next_turn
         game.turn_marker = next_turn
-        db.session.commit()
-        print game.turn_marker
         game.last_saved = datetime.now()
         db.session.commit()
 

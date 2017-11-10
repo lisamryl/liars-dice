@@ -4,8 +4,9 @@ from flask import (Flask, render_template, redirect, request, flash,
                    session, jsonify)
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
-from model import User, Game, AbstractPlayer, Human, AI, db, connect_to_db
+from model import User, Game, AbstractPlayer, Human, AI, BidHistory, db, connect_to_db
 from game_play import *
 
 app = Flask(__name__)
@@ -131,19 +132,26 @@ def setup_game():
 def play_game(game_id):
     """Page for game play."""
     game = Game.query.filter(Game.id == game_id).first()
-
     players = get_players_in_game(game.id)
-
     total_dice = get_total_dice(players)
+    current_turn_player = get_name_of_current_turn_player(game)
+
+    #pass current bids into table on game page...
+    bids = (BidHistory.query
+                      .filter(BidHistory.game_id == game_id)
+                      .order_by(BidHistory.id)
+                      .all())
 
     return render_template("play_game.html",
                            game=game,
                            players=players,
-                           total_dice=total_dice)  # note eventually want the game to be played in the /game_id link
+                           total_dice=total_dice,
+                           bids=bids,
+                           current_turn_name=current_turn_player.name)
 
 
 #AJAX routes
-@app.route('/rolldice', methods=['POST'])
+@app.route('/rolldice.json', methods=['POST'])
 def roll_dice():
     """Get list of players by game id, and roll dice for all players."""
     game_id = request.form.get('game_id')
@@ -156,26 +164,75 @@ def roll_dice():
     return jsonify(player_info)
 
 
-@app.route('/startbid', methods=['POST'])
-def bidding():
-    """Start the bidding for a human/computer"""
+@app.route('/startbid.json', methods=['POST'])
+def comp_bidding():
+    """Start the bidding for a computer"""
+
+    ### add while loop to keep processing turns...
 
     #if human, show form on front end and get bid information, if computer, calc
     #bid odds and determine resulting bid
     game_id = request.form.get('game_id')
     game = Game.query.filter(Game.id == game_id).first()
     # players = get_players_in_game(game_id)
-    player = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id,
-                                         AbstractPlayer.position == game.turn_marker).first()
-    if player.comp:
-        bid = player.comp.bidding()
+    player = (AbstractPlayer
+              .query
+              .filter(AbstractPlayer.game_id == game_id,
+                      AbstractPlayer.position == game.turn_marker)
+              .first())
+
+    bid = player.comp.bidding()
+    print bid
+    current_turn_player = get_name_of_current_turn_player(game)
+    if bid == "Challenge" or bid == "Exact":
+        requests = {'name': player.name,
+                    'die_choice': bid,
+                    'die_count': bid,
+                    'player_turn': None,
+                    'turn_marker': None}
     else:
-        bid = player.human.bidding()
-    requests = {'name': player.name,
-                'die_choice': bid.die_choice,
-                'die_count': bid.die_count}
+        requests = {'name': player.name,
+                    'die_choice': bid.die_choice,
+                    'die_count': bid.die_count,
+                    'turn_marker_name': current_turn_player.name,
+                    'turn_marker': game.turn_marker}
+
     return jsonify(requests)
 
+
+@app.route('/endturn', methods=['POST'])
+def end_turn():
+    """End the turn: remove bids from DB, check bid, remove a die, next turn."""
+    pass
+
+@app.route('/playerturn.json', methods=['POST'])
+def player_turn():
+    """When it's a human player turn, render form to complete bid."""
+    die_choice = request.form.get('die_choice')
+    die_count = request.form.get('die_count')
+    game_id = request.form.get('game_id')
+
+    player = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id,
+                                         AbstractPlayer.position == 1).first()
+    game = Game.query.filter(Game.id == game_id).first()
+    #save bid ##make function
+    new_bid = BidHistory(game_id, player.id, die_choice, die_count)
+    db.session.add(new_bid)
+    db.session.commit()
+
+    #update turn marker ###make function
+    game.turn_marker = 2  # player is always position 1
+    game.last_saved = datetime.now()
+    db.session.commit()
+    current_turn_player = get_name_of_current_turn_player(game)
+
+    requests = {'name': player.name,
+                'die_choice': die_choice,
+                'die_count': die_count,
+                'turn_marker': game.turn_marker,
+                'turn_marker_name': current_turn_player.name}
+
+    return jsonify(requests)
 
 if __name__ == "__main__":
     # We have to set debug=True here, since it has to be True at the

@@ -30,13 +30,27 @@
 <th># of Dice</th>
 </tr>
 <tbody id='bids'>
+        {% for bid in bids %}
+        <tr>
+        <td class='player-name'>{{ bid.player.name }}</td>
+        <td class='die-choice'>{{ bid.die_choice }}</td>
+        <td class='die-count'>{{ bid.die_count }}</td>
+        </tr>
+        {% endfor %}
 </tbody>
 </table>
 <br>
 <button class='start-bid'>Start Player Bidding</button>
 <br>
-<form id='bid-form' action='/bid', method='POST'>
-Which die do you want to bid on? 
+<br>
+<div id='player-bidding-div' {% if game.turn_marker != 1 %} 
+hidden
+{% endif %}>
+<button class='bid-type' id='challenge'>Challenge</button>
+<button class='bid-type' id='exact'>Exact</button>
+<form id='bid-form' action='/playerturn', method='POST' >
+<input type='hidden' value='{{ game.id }}' name='game-id'>
+Which die do you want to bid on?
     <select name = 'player-die-choice'>
         <option value="2">2</option>
         <option value="3">3</option>
@@ -45,7 +59,7 @@ Which die do you want to bid on?
         <option value="6">6</option>
     </select><br>
 How many do you want to bid?
-    <select name = 'player-die-choice'>
+    <select name = 'player-die-count'>
         <option value="1">1 die</option>
         <option value="2">2 dice</option>
         <option value="3">3 dice</option>
@@ -81,13 +95,13 @@ How many do you want to bid?
         <option value="29">29 dice</option>
         <option value="30">30 dice</option>
     </select><br>
-    <input type="submit" value="Bid!">
+    <input type="submit" value="Bid!" id='player-bidding'>
 </form>
+</div>
 <br>
-
 <h2> Total Dice: {{ total_dice }} </h2>
 
-<h2> Current Turn: {{ game.turn_marker }} </h2>
+<h2 id='turn-marker'> Current Turn: {{ current_turn_name }}</h2>
 
 <h2> Difficulty: {{ game.difficulty }}</h2>
 
