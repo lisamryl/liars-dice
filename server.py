@@ -6,7 +6,8 @@ from flask_debugtoolbar import DebugToolbarExtension
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-from model import User, Game, AbstractPlayer, Human, AI, BidHistory, db, connect_to_db
+from model import User, Game, AbstractPlayer, HumanPlayer, AIPlayer, BidHistory
+from model import db, connect_to_db
 from game_play import *
 
 app = Flask(__name__)
@@ -182,7 +183,6 @@ def comp_bidding():
               .first())
 
     bid = player.comp.bidding()
-    print bid
     current_turn_player = get_name_of_current_turn_player(game)
     if bid == "Challenge" or bid == "Exact":
         requests = {'name': player.name,

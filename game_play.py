@@ -1,4 +1,5 @@
-from model import User, Game, AbstractPlayer, Human, AI, BidHistory, db
+from model import User, Game, AbstractPlayer, HumanPlayer, AIPlayer, BidHistory
+from model import db
 
 
 ###functions
@@ -30,12 +31,12 @@ def create_new_game(num_players, difficulty, user_id):
     game_id = game.id
     #Create new Player object (based on signed in user information)
     user_info = User.query.filter(User.username == user_id).first()
-    player = Human(user_info.name, user_info.id, game_id, 1)
+    player = HumanPlayer(user_info.name, user_info.id, game_id, 1)
     db.session.add(player)
 
     #Create new AI objects
     for i in range(1, num_players):
-        AI_i = AI("opponent_" + str(i), difficulty, game_id, i + 1)  # eventually randomly generate an Opp name
+        AI_i = AIPlayer("opponent_" + str(i), difficulty, game_id, i + 1)  # eventually randomly generate an Opp name
         db.session.add(AI_i)
     db.session.commit()
 

@@ -84,7 +84,7 @@ class AbstractPlayer(db.Model):
     For DB, this table has a joined table inheritance with Human/AI tables
     link to details: http://docs.sqlalchemy.org/en/latest/orm/inheritance.html"""
 
-    __tablename__ = "players"
+    __tablename__ = "abstract_players"
 
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     game_id = db.Column(db.Integer, db.ForeignKey('games.id'), nullable=False)
@@ -129,12 +129,14 @@ class AbstractPlayer(db.Model):
         db.session.commit()
 
 
-class Human(AbstractPlayer):
+class HumanPlayer(AbstractPlayer):
     """Human player in the game (controlled by user)."""
 
     __tablename__ = "humans"
 
-    id = db.Column(db.Integer, db.ForeignKey('players.id'), primary_key=True)
+    id = db.Column(db.Integer,
+                   db.ForeignKey('abstract_players.id'),
+                   primary_key=True)
 
     __table_args__ = {'extend_existing': True}
 
@@ -156,12 +158,14 @@ class Human(AbstractPlayer):
             self.id, self.user.username, self.players.die_count)
 
 
-class AI(AbstractPlayer):
+class AIPlayer(AbstractPlayer):
     """Opponent in the game (controlled by AI)"""
 
     __tablename__ = "computers"
 
-    id = db.Column(db.Integer, db.ForeignKey('players.id'), primary_key=True)
+    id = db.Column(db.Integer,
+                   db.ForeignKey('abstract_players.id'),
+                   primary_key=True)
 
     __table_args__ = {'extend_existing': True}
 
@@ -194,12 +198,12 @@ class AI(AbstractPlayer):
         self.intelligence_factor = round(min(max(numpy.random.normal(
             self.intelligence_mean - self.aggressive_factor/10, .03), 0), 1), 3)
 
-    def to_challenge(self, curr_bid, total_dice):
+    def to_challenge(self, current_bid, total_dice):
         """Determine if AI should challenge the bid or not."""
         #logic change after MVP
-        if curr_bid is not None:
+        if current_bid is not None:
             prob_mapping = get_prob_mapping(total_dice, self.current_die_roll)
-            if prob_mapping[curr_bid.die_choice][curr_bid.die_count] < 0.05:  # 5% for now
+            if prob_mapping[current_bid.die_choice][current_bid.die_count] < 0.05:  # 5% for now
                 return True
         return False
 
@@ -269,7 +273,9 @@ class BidHistory(db.Model):
 
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     game_id = db.Column(db.Integer, db.ForeignKey('games.id'), nullable=False)
-    player_id = db.Column(db.Integer, db.ForeignKey('players.id'), nullable=False)
+    player_id = db.Column(db.Integer,
+                          db.ForeignKey('abstract_players.id'),
+                          nullable=False)
     die_choice = db.Column(db.Integer, nullable=False)
     die_count = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
