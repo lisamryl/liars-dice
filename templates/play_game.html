@@ -11,8 +11,9 @@
 <h2> Player List: </h2>
 <ul id='player-details'>
 {% for player in players %}
-    <li>Name: {{ player.name }}; Die Count: {{ player.die_count }};
-        Position: {{ player.position }}
+    <li>Name: {{ player.name }}; 
+        Position: {{ player.position }};
+        Die Count: {{ player.die_count }};
         <span id='die-roll-{{ player.id }}'>Die Roll: {{ player.current_die_roll }}</span>
         {% if player.comp %}
         Liar: {{ player.comp.liar_factor }}

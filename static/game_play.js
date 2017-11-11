@@ -1,6 +1,6 @@
 "use strict";
 
-function get_game_id(url) {
+function getGameId(url) {
     // Returns game id of active game, based on url passed in
     // below syntax from Stack O. to pull last piece of url out as the game_id
     return url.href.substring(url.href.lastIndexOf('/') + 1); 
@@ -9,6 +9,7 @@ function get_game_id(url) {
 function rollDice(request) {
 
     //Refresh data in player details
+    console.log("dice rolled");
     for (let player_id in request) {
     $('#die-roll-' + player_id).empty();
 
@@ -17,54 +18,57 @@ function rollDice(request) {
 }
 
 
-function challenge(request) {
-//handle case where challenge is called
-    $.post('/endturn.json', {'game_id': game_id}, startRound);
+function startRound(request) {
+//restart round (roll dice and begin bidding)
+    console.log("start round was called");
+    rollDice(request);
+    window.location.reload();
 }
 
-function exact(request) {
-//handle case where exact is called
 
+function challengeOrExact(request) {
+//handle case where challenge is called
+    console.log("challenge or exact function called");
+    $.post('/endturn.json', {'game_id': game_id}, startRound);
 }
 
 
 function handleBid(request) {
 //handle the bid provided by the player or computer
-if (request['die_choice'] == "Challenge") {
-    challenge(request);
-}
-else if (request['die_choice'] == "Exact") {
-    exact(request);
-}
+    console.log("handle bid called");
+    console.log(request['die_choice']);
+    if (request['bid'] == "Challenge" | request['bid'] == "Exact") {
+        challengeOrExact(request);
+    }
 
-else {
-    $('#bids').append(
-        `<tr>
-        <td class='player-name'>${request['name']}</td>
-        <td class='die-choice'>${request['die_choice']}</td>
-        <td class='die-count'>${request['die_count']}</td>
-        </tr>`);
-    $('#turn-marker').empty();
-    $('#turn-marker').append(`Current Turn: ${request['turn_marker_name']}`);
-
-    if (request['turn_marker'] == 1) {
-        $('#player-bidding-div').show();
-        }
     else {
-        $('#player-bidding-div').hide();  
+        $('#bids').append(
+            `<tr>
+            <td class='player-name'>${request['name']}</td>
+            <td class='die-choice'>${request['die_choice']}</td>
+            <td class='die-count'>${request['die_count']}</td>
+            </tr>`);
+        $('#turn-marker').empty();
+        $('#turn-marker').append(`Current Turn: ${request['turn_marker_name']}`);
+
+        if (request['turn_marker'] == 1) {
+            $('#player-bidding-div').show();
+        }
+        else {
+            $('#player-bidding-div').hide();  
         }
     }
 }
 
 $('.roll-dice').on('click', function () {
 
-    let game_id = get_game_id(window.location);
+    let game_id = getGameId(window.location);
     $.post('/rolldice.json', {'game_id': game_id}, rollDice);
 
 });
 
 $('.start-bid').on('click', function () {
-    let game_id = get_game_id(window.location);
+    let game_id = getGameId(window.location);
     $.post('/compturn.json', {'game_id': game_id}, handleBid);
 });
 
@@ -77,4 +81,11 @@ $('#bid-form').on('submit', function (evt) {
     "game_id": $("[name='game-id']").val()
 };
     $.post('/playerturn.json', formInputs, handleBid);
+});
+
+$('.bid-type').on('click', function (evt) {
+
+    let game_id = get_game_id(window.location);
+    $.post('/endturn.json', {'game_id': game_id, 'bid_type': bid_type}, challengeOrExact);
+
 });

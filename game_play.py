@@ -16,6 +16,7 @@ def check_for_game_over(loser, winner, players_left):
         if loser.final_place == 2:
             #last_bidder won, assign final place as 1
             winner.final_place == 1
+            game.is_finished = True
             db.session.commit()
             return True
     db.session.commit()
@@ -95,6 +96,7 @@ def update_turn_marker(game):
 def update_turn_after_results(game, losing_player):
     """Given game object and player who lost round, update marker for new turn.
     Returns losing_player."""
+    players = get_players_in_game(game.id)
     # if player is out, go to next player for turn start
     if losing_player.die_count == 0:
         #if last player position, need to update turn to player 1

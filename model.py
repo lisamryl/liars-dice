@@ -100,7 +100,7 @@ class AbstractPlayer(db.Model):
 
     ## store most recent bid or a new table......
 
-    game = db.relationship("Game", backref=db.backref("players"), order_by=id)
+    game = db.relationship("Game", backref=db.backref("players"), order_by=position)
 
     def __init__(self, name, game_id, position):
         self.game_id = game_id
