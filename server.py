@@ -165,7 +165,7 @@ def roll_dice():
     return jsonify(player_info)
 
 
-@app.route('/startbid.json', methods=['POST'])
+@app.route('/compturn.json', methods=['POST'])
 def comp_bidding():
     """Start the bidding for a computer"""
 
@@ -173,7 +173,7 @@ def comp_bidding():
 
     #if human, show form on front end and get bid information, if computer, calc
     #bid odds and determine resulting bid
-    game_id = request.form.get('game_id')
+    game_id = int(request.form.get('game_id'))
     game = Game.query.filter(Game.id == game_id).first()
     # players = get_players_in_game(game_id)
     player = (AbstractPlayer
@@ -181,29 +181,114 @@ def comp_bidding():
               .filter(AbstractPlayer.game_id == game_id,
                       AbstractPlayer.position == game.turn_marker)
               .first())
-
+    #have comp make a bid, save to db, and set turn marker
     bid = player.comp.bidding()
     current_turn_player = get_name_of_current_turn_player(game)
     if bid == "Challenge" or bid == "Exact":
-        requests = {'name': player.name,
-                    'die_choice': bid,
-                    'die_count': bid,
-                    'player_turn': None,
-                    'turn_marker': None}
+        request_items = {'bid': bid, 'game_id': game_id}
+        request_items = jsonify(request_items)
+        url = '/endturn/' + bid + '/' + str(game_id) + '.json'
+        print url ###need to fix this to be a post
+        return redirect(url)
     else:
+        update_turn_marker(game)
         requests = {'name': player.name,
                     'die_choice': bid.die_choice,
                     'die_count': bid.die_count,
                     'turn_marker_name': current_turn_player.name,
                     'turn_marker': game.turn_marker}
-
     return jsonify(requests)
 
+###need to change method to post only, and edit redirected from the compturn section
+@app.route('/endturn/<bid_type>/<game_id>.json', methods=['GET', 'POST'])
+def end_turn(bid_type, game_id):
+    """End the turn when challenged - check who won and adjust game accordingly.
+    Remove bids from DB, check bid, remove a die, next turn."""
+    # game_id = request.form.get('game_id')
+    # bid_type = request.form.get('bid')
+    game = Game.query.filter(Game.id == game_id).first()
+    p_query = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id)
+    players = p_query.all()
+    #determine number of players who are already out of the game (and have a final place)
+    players_out_of_game = p_query.filter(AbstractPlayer.final_place is None).count()
+    num_players = len(players)
+    players_left = num_players - players_out_of_game
+    challenger = p_query.filter(AbstractPlayer.position == game.turn_marker).first()
+    if challenger.position == 1:
+        last_bidder_position = num_players
+    else:
+        last_bidder_position = challenger.position - 1
+    last_bidder = (AbstractPlayer
+                   .query
+                   .filter(AbstractPlayer.game_id == game_id,
+                           AbstractPlayer.position == last_bidder_position)
+                   .first())
+    #pull the final bid that was challenged (or called exact on)
+    final_bid = (BidHistory.query
+                           .filter(BidHistory.game_id == game_id,
+                                   BidHistory.player_id == last_bidder.id)
+                           .order_by(BidHistory.created_at.desc())
+                           .first())
+    counts = get_counts_of_dice(players)
+    actual_die_count = counts.get(final_bid.die_choice, 0)
 
-@app.route('/endturn', methods=['POST'])
-def end_turn():
-    """End the turn: remove bids from DB, check bid, remove a die, next turn."""
-    pass
+    if bid_type == 'challenge':
+        if actual_die_count >= final_bid.die_count:
+            #challenger wins, last bidder loses a die
+            # message = """{challenger} challenged the bid and was correct!
+            # {last_bidder} loses a die""".format(challenger=challenger.name,
+            #                                     last_bidder=last_bidder.name)
+            last_bidder.die_count -= 1
+            db.session.commit()
+            is_game_over = check_for_game_over(loser=last_bidder,
+                                               winner=challenger,
+                                               players_left=players_left)
+            next_player = update_turn_after_results(game=game,
+                                                    losing_player=last_bidder)
+        else:
+            #challenger loses
+            challenger.die_count -= 1
+            db.session.commit()
+            is_game_over = check_for_game_over(loser=challenger,
+                                               winner=last_bidder,
+                                               players_left=players_left)
+            next_player = update_turn_after_results(game=game,
+                                                    losing_player=challenger)
+    else:
+        if actual_die_count == final_bid.die_count:
+            #exact bidder wins
+            #check if there is an extra die to give (total dice < starting dice)
+            if sum(counts.values()) < num_players * 5:
+                flash(challenger.name + "gains a die!")
+                challenger.die_count += 1
+                db.session.commit()
+            is_game_over = check_for_game_over(loser=last_bidder,
+                                               winner=challenger,
+                                               players_left=players_left)
+            next_player = update_turn_after_results(game=game,
+                                                    losing_player=last_bidder)
+        else:
+            #exact bidder is wrong, loses a die
+            challenger.die_count -= 1
+            db.session.commit()
+            is_game_over = check_for_game_over(loser=challenger,
+                                               winner=last_bidder,
+                                               players_left=players_left)
+            next_player = update_turn_after_results(game=game,
+                                                    losing_player=challenger)
+
+    #Clear bid history after round
+    BidHistory.query.filter(BidHistory.game_id == game_id).delete()
+    db.session.commit()
+
+    if is_game_over:
+        human_player = p_query.filter(AbstractPlayer.position == 1).first()
+        render_template("game_over.html", game=game, human_player=human_player)
+
+    requests = {'turn_marker_name': next_player.name,
+                'turn_marker': game.turn_marker}
+
+    return requests
 
 @app.route('/playerturn.json', methods=['POST'])
 def player_turn():
@@ -215,15 +300,14 @@ def player_turn():
     player = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id,
                                          AbstractPlayer.position == 1).first()
     game = Game.query.filter(Game.id == game_id).first()
-    #save bid ##make function
+    #save bid ##make function?
     new_bid = BidHistory(game_id, player.id, die_choice, die_count)
     db.session.add(new_bid)
     db.session.commit()
 
-    #update turn marker ###make function
-    game.turn_marker = 2  # player is always position 1
-    game.last_saved = datetime.now()
-    db.session.commit()
+    #update turn marker
+    update_turn_marker(game)
+
     current_turn_player = get_name_of_current_turn_player(game)
 
     requests = {'name': player.name,

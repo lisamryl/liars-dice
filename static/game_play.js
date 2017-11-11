@@ -65,7 +65,7 @@ $('.roll-dice').on('click', function () {
 
 $('.start-bid').on('click', function () {
     let game_id = get_game_id(window.location);
-    $.post('/startbid.json', {'game_id': game_id}, handleBid);
+    $.post('/compturn.json', {'game_id': game_id}, handleBid);
 });
 
 // player turn - after submitting

@@ -1,8 +1,26 @@
+from datetime import datetime
+
 from model import User, Game, AbstractPlayer, HumanPlayer, AIPlayer, BidHistory
-from model import db
+from model import db, get_next_turn
 
 
 ###functions
+def check_for_game_over(loser, winner, players_left):
+    """Check if player is done and edit db, return if game over.
+
+    Given player objects for the person who lost the round and person who won
+    the round, determine if the loser is out of the game, and if the winner won
+    the entire game (aka no players remain). Update db with results"""
+    if loser.die_count == 0:
+        loser.final_place = players_left
+        if loser.final_place == 2:
+            #last_bidder won, assign final place as 1
+            winner.final_place == 1
+            db.session.commit()
+            return True
+    db.session.commit()
+    return False
+
 def get_counts_of_dice(players):
     """
     Store the list of dice for each player into a dictionary, and count the
@@ -15,7 +33,7 @@ def get_counts_of_dice(players):
     """
     counts = {}
     for player in players:
-        for item in player.die_count:
+        for item in player.current_die_roll:
             counts[item] = counts.get(item, 0) + 1
     return counts
 
@@ -63,3 +81,28 @@ def get_name_of_current_turn_player(game):
                            .filter(AbstractPlayer.position == game.turn_marker)
                            .first())
     return current_turn_player
+
+
+def update_turn_marker(game):
+    """Given current turn and game object, update marker for new player turn."""
+    players = get_players_in_game(game.id)
+    next_turn = get_next_turn(game.turn_marker, len(players))
+    game.turn_marker = next_turn
+    game.last_saved = datetime.now()
+    db.session.commit()
+    return next_turn
+
+def update_turn_after_results(game, losing_player):
+    """Given game object and player who lost round, update marker for new turn.
+    Returns losing_player."""
+    # if player is out, go to next player for turn start
+    if losing_player.die_count == 0:
+        #if last player position, need to update turn to player 1
+        if losing_player.position == len(players):
+            game.position = 1
+        else:
+            game.position = losing_player.position + 1
+    else:
+        game.position = losing_player.position
+    db.session.commit()
+    return losing_player

@@ -249,12 +249,6 @@ class AIPlayer(AbstractPlayer):
         db.session.add(new_bid)
         db.session.commit()
 
-        #update turn marker
-        next_turn = get_next_turn(self.position, len(players))
-        game.turn_marker = next_turn
-        game.last_saved = datetime.now()
-        db.session.commit()
-
         return new_bid
 
     def __repr__(self):
