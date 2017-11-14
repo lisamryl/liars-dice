@@ -47,8 +47,8 @@
 <div id='player-bidding-div' {% if game.turn_marker != 1 %} 
 hidden
 {% endif %}>
-<button class='bid-type' id='challenge'>Challenge</button>
-<button class='bid-type' id='exact'>Exact</button>
+<button class='bid-type' id='challenge' value='challenge'>Challenge</button>
+<button class='bid-type' id='exact' value='exact'>Exact</button>
 <form id='bid-form' action='/playerturn', method='POST' >
 <input type='hidden' value='{{ game.id }}' name='game-id'>
 Which die do you want to bid on?
@@ -70,10 +70,6 @@ How many do you want to bid?
         <option value="7">7 dice</option>
         <option value="8">8 dice</option>
         <option value="9">9 dice</option>
-        <option value="10">10 dice</option>
-        <option value="11">11 dice</option>
-        <option value="12">12 dice</option>
-        <option value="13">13 dice</option>
         <option value="10">10 dice</option>
         <option value="11">11 dice</option>
         <option value="12">12 dice</option>

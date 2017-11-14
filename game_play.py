@@ -1,16 +1,27 @@
 from datetime import datetime
 
-from model import User, Game, AbstractPlayer, HumanPlayer, AIPlayer, BidHistory
-from model import db, get_next_turn
+from model import User, Game, AbstractPlayer, HumanPlayer, AIPlayer, BidHistory, db
+from bidding import get_next_turn
 
 
 ###functions
+def roll_player_dice(players):
+    """For player objects, roll dice for each player - return player info"""
+    player_info = {}
+    for player in players:
+        player.roll_dice()
+        player_info[player.id] = player.current_die_roll
+    db.session.commit()
+
+    return player_info
+
 def check_for_game_over(loser, winner, players_left):
     """Check if player is done and edit db, return if game over.
 
     Given player objects for the person who lost the round and person who won
     the round, determine if the loser is out of the game, and if the winner won
     the entire game (aka no players remain). Update db with results"""
+    game = Game.query.filter(Game.id == loser.game_id).first()
     if loser.die_count == 0:
         loser.final_place = players_left
         if loser.final_place == 2:
@@ -21,6 +32,7 @@ def check_for_game_over(loser, winner, players_left):
             return True
     db.session.commit()
     return False
+
 
 def get_counts_of_dice(players):
     """
@@ -75,6 +87,34 @@ def get_players_in_game(game_id):
 
     return AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id).all()
 
+
+def get_active_players_in_game(game_id):
+    """Get player objects for all active players associated with game_id."""
+
+    return (AbstractPlayer
+            .query
+            .filter(AbstractPlayer.game_id == game_id,
+                    AbstractPlayer.final_place.is_(None))
+            .order_by(AbstractPlayer.id)
+            .all())
+
+
+def get_inactive_players_positions(game_id):
+    """Get player positions for all inactive players associated with game_id."""
+    positions = []
+    inactive_player_list = (AbstractPlayer
+                            .query
+                            .filter(AbstractPlayer.game_id == game_id,
+                                    AbstractPlayer.final_place != None)
+                            .order_by(AbstractPlayer.id)
+                            .all())
+
+    for player in inactive_player_list:
+        positions.append(player.position)
+
+    return positions
+
+
 def get_name_of_current_turn_player(game):
     """Given a game object, returns the player object of the current turn."""
     current_turn_player = (AbstractPlayer
@@ -84,27 +124,19 @@ def get_name_of_current_turn_player(game):
     return current_turn_player
 
 
-def update_turn_marker(game):
+def update_turn_marker(game, losing_player=None):
     """Given current turn and game object, update marker for new player turn."""
-    players = get_players_in_game(game.id)
-    next_turn = get_next_turn(game.turn_marker, len(players))
-    game.turn_marker = next_turn
+    positions_out_of_game = get_inactive_players_positions(game.id)
+    all_players = get_players_in_game(game.id)
+    if losing_player is None:
+        next_turn = get_next_turn(game.turn_marker, len(all_players))
+        game.turn_marker = next_turn
+    else:
+        game.turn_marker = losing_player.position
+        next_turn = game.turn_marker
+    while next_turn in positions_out_of_game:
+        next_turn = get_next_turn(game.turn_marker, len(all_players))
+        game.turn_marker = next_turn
     game.last_saved = datetime.now()
     db.session.commit()
     return next_turn
-
-def update_turn_after_results(game, losing_player):
-    """Given game object and player who lost round, update marker for new turn.
-    Returns losing_player."""
-    players = get_players_in_game(game.id)
-    # if player is out, go to next player for turn start
-    if losing_player.die_count == 0:
-        #if last player position, need to update turn to player 1
-        if losing_player.position == len(players):
-            game.position = 1
-        else:
-            game.position = losing_player.position + 1
-    else:
-        game.position = losing_player.position
-    db.session.commit()
-    return losing_player

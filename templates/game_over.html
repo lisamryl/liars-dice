@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1> Game is Over </h1>
+
+{% if human_player.final_place == 1 %}
+<h1> Congratulations, you've won! </h1>
+{% else %}
+<h2> You lost! You came in {{ human_player.final_place }} place </h2> 
+<!-- note need to add suffix.... -->
+{% endif %}
+<a href="/create_game">Create a new game</a><br>
+<a href="/load_game">Load a saved game (doesn't exist yet)</a>
+
+
+{% endblock %}

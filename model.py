@@ -4,6 +4,7 @@ from random import randint
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from collections import Counter  # remove import after AI logic is changed
+import math
 
 from bidding import get_prob_mapping, get_next_turn
 
@@ -122,7 +123,7 @@ class AbstractPlayer(db.Model):
         it returns a roll of 5 dice, where each is a random number from 1-6).
         """
         roll = []
-        for x in range(0, self.die_count):
+        for x in xrange(self.die_count):
             roll.append(randint(1, 6))
         self.current_die_roll = roll
         self.last_saved = datetime.now()
@@ -203,7 +204,10 @@ class AIPlayer(AbstractPlayer):
         #logic change after MVP
         if current_bid is not None:
             prob_mapping = get_prob_mapping(total_dice, self.current_die_roll)
-            if prob_mapping[current_bid.die_choice][current_bid.die_count] < 0.05:  # 5% for now
+            try:
+                if prob_mapping[current_bid.die_choice][current_bid.die_count] < 0.35:  # 35% for now
+                    return True
+            except:
                 return True
         return False
 
@@ -227,9 +231,9 @@ class AIPlayer(AbstractPlayer):
         total_dice = get_total_dice(players)
 
         #check if should challenge (add exact later on)
-        if self.to_challenge(current_bid, total_dice) is True:
+        if self.to_challenge(current_bid, total_dice):
             return "Challenge"
-        if self.to_call_exact(current_bid, total_dice) is True:
+        if self.to_call_exact(current_bid, total_dice):
             return "Exact"
 
         #note the below logic will change after MVP is complete!!!!!
@@ -239,7 +243,7 @@ class AIPlayer(AbstractPlayer):
         if die_choice == 1:
             die_choice = 2
         if current_bid is None:
-            die_count = total_dice / len(players)
+            die_count = math.ceil(total_dice / len(players))
         else:
             die_count = current_bid.die_count + 1
         #end MVP logic

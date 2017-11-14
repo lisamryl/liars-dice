@@ -1,7 +1,7 @@
 from jinja2 import StrictUndefined
 
 from flask import (Flask, render_template, redirect, request, flash,
-                   session, jsonify)
+                   session, jsonify, url_for)
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
@@ -133,7 +133,12 @@ def setup_game():
 def play_game(game_id):
     """Page for game play."""
     game = Game.query.filter(Game.id == game_id).first()
-    players = get_players_in_game(game.id)
+    players = get_active_players_in_game(game.id)
+    # if this is the first time the page ever loads, roll dice
+    if players[0].current_die_roll is None and players[0].die_count == 5:
+        roll_player_dice(players)
+
+    print "game details: {}".format(game)
     total_dice = get_total_dice(players)
     current_turn_player = get_name_of_current_turn_player(game)
 
@@ -151,16 +156,23 @@ def play_game(game_id):
                            current_turn_name=current_turn_player.name)
 
 
+@app.route('/game_over/<game_id>')
+def game_over(game_id):
+    """Display end game to user"""
+    print "enter end game route"
+    game = Game.query.filter(Game.id == game_id).first()
+    human_player = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id,
+                                               AbstractPlayer.position == 1).first()
+    return render_template("game_over.html", game=game, human_player=human_player)
+
+
 #AJAX routes
 @app.route('/rolldice.json', methods=['POST'])
 def roll_dice():
     """Get list of players by game id, and roll dice for all players."""
     game_id = request.form.get('game_id')
     players = get_players_in_game(game_id)
-    player_info = {}
-    for player in players:
-        player.roll_dice()
-        player_info[player.id] = player.current_die_roll
+    player_info = roll_player_dice(players)
 
     return jsonify(player_info)
 
@@ -186,118 +198,114 @@ def comp_bidding():
     current_turn_player = get_name_of_current_turn_player(game)
     if bid == "Challenge" or bid == "Exact":
         request_items = {'bid': bid.lower(), 'game_id': game_id}
-        request_items = jsonify(request_items)
-        url = '/endturn/' + bid.lower() + '/' + str(game_id) + '.json'
-        print url ###need to fix this to be a post
-        return redirect(url)
+        return jsonify(request_items)
     else:
         update_turn_marker(game)
         requests = {'name': player.name,
                     'die_choice': bid.die_choice,
                     'die_count': bid.die_count,
                     'turn_marker_name': current_turn_player.name,
-                    'turn_marker': game.turn_marker}
+                    'turn_marker': game.turn_marker,
+                    'game_id': game.id}
     return jsonify(requests)
 
-###need to change method to post only, and edit redirected from the compturn section
-@app.route('/endturn/<bid_type>/<game_id>.json', methods=['GET', 'POST'])
-def end_turn(bid_type, game_id):
+
+@app.route('/endturn.json', methods=['POST'])
+def end_turn():
     """End the turn when challenged - check who won and adjust game accordingly.
     Remove bids from DB, check bid, remove a die, next turn."""
-    # game_id = request.form.get('game_id')
-    # bid_type = request.form.get('bid')
-    print "redirected"
+    game_id = request.form.get('game_id')
+    bid_type = request.form.get('bid')
+    print "game id {}".format(game_id)
+    print "bid type {}".format(bid_type)
     game = Game.query.filter(Game.id == game_id).first()
     p_query = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id)
     players = p_query.all()
+    human_player = p_query.filter(AbstractPlayer.position == 1).first()
     #determine number of players who are already out of the game (and have a final place)
-    players_out_of_game = p_query.filter(AbstractPlayer.final_place is None).count()
+    players_out_of_game = p_query.filter(AbstractPlayer.final_place != None).count()
+    print "players out {}".format(players_out_of_game)
     num_players = len(players)
     players_left = num_players - players_out_of_game
+    last_bid = (BidHistory.query
+                          .filter(BidHistory.game_id == game_id)
+                          .order_by(BidHistory.created_at.desc())
+                          .first())
+    print last_bid
+    # print "last bid {} {}".format(last_bid.die_choice, last_bid.die_count)
+    print "game turn marker {}".format(game.turn_marker)
     challenger = p_query.filter(AbstractPlayer.position == game.turn_marker).first()
-    if challenger.position == 1:
-        last_bidder_position = num_players
-    else:
-        last_bidder_position = challenger.position - 1
-    print "got here"
-    last_bidder = (AbstractPlayer
-                   .query
-                   .filter(AbstractPlayer.game_id == game_id,
-                           AbstractPlayer.position == last_bidder_position)
-                   .first())
+    print "challenger {}".format(challenger)
+    last_bidder = p_query.filter(AbstractPlayer.id == last_bid.player_id).first()
+    print "last bidder {}".format(last_bidder)
+
     #pull the final bid that was challenged (or called exact on)
-    final_bid = (BidHistory.query
-                           .filter(BidHistory.game_id == game_id,
-                                   BidHistory.player_id == last_bidder.id)
-                           .order_by(BidHistory.created_at.desc())
-                           .first())
     counts = get_counts_of_dice(players)
     #sum of die bid on, plus wilds
-    actual_die_count = counts.get(final_bid.die_choice, 0) + counts.get(1, 0)
+    print "die choice {}".format(last_bid.die_choice)
+    actual_die_count = counts.get(last_bid.die_choice, 0) + counts.get(1, 0)
 
+    #make these "and" if statements (flat versus nested)
     if bid_type.lower() == 'challenge':
-        print "challenged"
         print "actual count {}".format(actual_die_count)
-        print "final bid count {}".format(final_bid.die_count)
-        if actual_die_count < final_bid.die_count:
+        print "final bid count {}".format(last_bid.die_count)
+        if actual_die_count < last_bid.die_count:
             print "challenger wins"
             #challenger wins, last bidder loses a die
             # message = """{challenger} challenged the bid and was correct!
             # {last_bidder} loses a die""".format(challenger=challenger.name,
             #                                     last_bidder=last_bidder.name)
             last_bidder.die_count -= 1
-            db.session.commit()
-            is_game_over = check_for_game_over(loser=last_bidder,
-                                               winner=challenger,
-                                               players_left=players_left)
-            next_player = update_turn_after_results(game=game,
-                                                    losing_player=last_bidder)
+            loser = last_bidder
+            winner = challenger
         else:
             print "challenger loses"
             #challenger loses
             challenger.die_count -= 1
-            db.session.commit()
-            is_game_over = check_for_game_over(loser=challenger,
-                                               winner=last_bidder,
-                                               players_left=players_left)
-            next_player = update_turn_after_results(game=game,
-                                                    losing_player=challenger)
+            loser = challenger
+            winner = last_bidder
     else:
         print "exacted"
-        if actual_die_count == final_bid.die_count:
+        if actual_die_count == last_bid.die_count:
             print "exact correct"
             #exact bidder wins
             #check if there is an extra die to give (total dice < starting dice)
             if sum(counts.values()) < num_players * 5:
                 challenger.die_count += 1
-                db.session.commit()
-            is_game_over = check_for_game_over(loser=last_bidder,
-                                               winner=challenger,
-                                               players_left=players_left)
-            next_player = update_turn_after_results(game=game,
-                                                    losing_player=last_bidder)
+            loser = last_bidder
+            winner = challenger
+
         else:
             print "exact incorrect"
             #exact bidder is wrong, loses a die
             challenger.die_count -= 1
-            db.session.commit()
-            is_game_over = check_for_game_over(loser=challenger,
-                                               winner=last_bidder,
-                                               players_left=players_left)
-            next_player = update_turn_after_results(game=game,
-                                                    losing_player=challenger)
+            loser = challenger
+            winner = last_bidder
+    db.session.commit()
+    print "loser {}".format(loser)
+    print "winner {}".format(winner)
+    is_game_over = check_for_game_over(loser, winner, players_left)
+    next_player_position = update_turn_marker(game, loser)
+    next_player = AbstractPlayer.query.filter(AbstractPlayer.position == next_player_position).first()
+    did_human_lose = human_player.final_place
+    print "did human lose: {}".format(did_human_lose)
 
-    print "got to bidding history clear"
+    if did_human_lose or is_game_over:
+        print "got to game over"
+        # url = '/game_over/' + str(game_id)
+        # print url
+        # return redirect(url)
+        requests = {'game_id': game_id,
+                    'bid': "game_over"}
+        return jsonify(requests)
+    requests = {'turn_marker_name': next_player.name,
+                'turn_marker': game.turn_marker,
+                'bid': bid_type.lower(),
+                'game_id': game_id}
     #Clear bid history after round
     BidHistory.query.filter(BidHistory.game_id == game_id).delete()
+    roll_player_dice(players)
     db.session.commit()
-    print "cleared bid history"
-    if is_game_over:
-        print "got to game over"
-        human_player = p_query.filter(AbstractPlayer.position == 1).first()
-        render_template("game_over.html", game=game, human_player=human_player)
-    requests = {'turn_marker_name': next_player.name,
-                'turn_marker': game.turn_marker}
     print requests
     return jsonify(requests)
 
@@ -326,7 +334,8 @@ def player_turn():
                 'die_choice': die_choice,
                 'die_count': die_count,
                 'turn_marker': game.turn_marker,
-                'turn_marker_name': current_turn_player.name}
+                'turn_marker_name': current_turn_player.name,
+                'game_id': game.id}
 
     return jsonify(requests)
 
