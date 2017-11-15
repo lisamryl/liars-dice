@@ -58,8 +58,7 @@ def create_new_game(num_players, difficulty, username):
     db.session.add(new_game)
     db.session.commit()
 
-    game = Game.query.order_by('created_at desc').first()
-    game_id = game.id
+    game_id = new_game.id
     #Create new Player object (based on signed in user information)
     user_info = User.query.filter(User.username == username).first()
     player = HumanPlayer(user_info.name, user_info.id, game_id, 1)

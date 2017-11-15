@@ -199,14 +199,14 @@ def comp_bidding():
     if bid == "Challenge" or bid == "Exact":
         request_items = {'bid': bid.lower(), 'game_id': game_id}
         return jsonify(request_items)
-    else:
-        update_turn_marker(game)
-        requests = {'name': player.name,
-                    'die_choice': bid.die_choice,
-                    'die_count': bid.die_count,
-                    'turn_marker_name': current_turn_player.name,
-                    'turn_marker': game.turn_marker,
-                    'game_id': game.id}
+
+    update_turn_marker(game)
+    requests = {'name': player.name,
+                'die_choice': bid.die_choice,
+                'die_count': bid.die_count,
+                'turn_marker_name': current_turn_player.name,
+                'turn_marker': game.turn_marker,
+                'game_id': game.id}
     return jsonify(requests)
 
 

@@ -3,8 +3,10 @@ from datetime import datetime
 
 
 from server import app
-from model import *
+from model import User, Game, AbstractPlayer, HumanPlayer, AIPlayer, BidHistory
+from model import connect_to_db
 from game_play import *
+from bidding import *
 
 
 def example_data():
@@ -30,7 +32,7 @@ def example_data():
 
 
 class GamePlayUnitTests(unittest.TestCase):
-    """Testing functions"""
+    """Testing functions from game_play.py file"""
 
     print "running unit tests for game play"
 
@@ -47,6 +49,13 @@ class GamePlayUnitTests(unittest.TestCase):
         example_data()
 
         self.players = AbstractPlayer.query.filter(AbstractPlayer.game_id == 1).all()
+
+    def tearDown(self):
+        """Do at end of every test."""
+
+        # (uncomment when testing database)
+        db.session.close()
+        db.drop_all()
 
     def test_roll_player_dice(self):
         """Test random function"""
@@ -65,8 +74,6 @@ class GamePlayUnitTests(unittest.TestCase):
 
         assert check_for_game_over(loser, winner, 2)
         assert not check_for_game_over(loser, winner, 4)
-        #revert back to 5 dice for other tests
-        loser.die_count = 5
 
     def test_get_counts_of_dice(self):
 
@@ -154,12 +161,6 @@ class GamePlayUnitTests(unittest.TestCase):
         game.turn_marker = 3
         assert update_turn_marker(game) == 4
 
-    def tearDown(self):
-        """Do at end of every test."""
-
-        # (uncomment when testing database)
-        db.session.close()
-        db.drop_all()
 
 class BiddingUnitTests(unittest.TestCase):
     """Testing functions"""
@@ -180,8 +181,16 @@ class BiddingUnitTests(unittest.TestCase):
 
         self.players = AbstractPlayer.query.filter(AbstractPlayer.game_id == 1).all()
 
+    def tearDown(self):
+        """Do at end of every test."""
+
+        # (uncomment when testing database)
+        db.session.close()
+        db.drop_all()
+
     def test_get_prob_mapping(self):
 
+        #### to be fixed ###
         probs = {2: {0: 1.0, 1: 0.99996039787195767, 2: 0.99946537127142809, 3: 0.9964952116682505, 4: 0.98510959985607005, 5: 0.95379916737257431, 6: 0.88804725915723326, 7: 0.77846074546499799, 8: 0.62973619116839319, 9: 0.46242106758471335, 10: 0.30440122864457064, 11: 0.17798535749245717, 12: 0.091792718070562121, 13: 0.04151367840778962, 14: 0.016374158576403286, 15: 0.005600078648666326, 16: 0.0016495826751628524, 17: 0.00041505268344294455, 18: 8.8265332693646513e-05, 19: 1.5645921416012717e-05, 20: 2.2686614437946558e-06}, 3: {0: 1, 1: 1.0, 2: 0.99996039787195767, 3: 0.99946537127142809, 4: 0.9964952116682505, 5: 0.98510959985607005, 6: 0.95379916737257431, 7: 0.88804725915723326, 8: 0.77846074546499799, 9: 0.62973619116839319, 10: 0.46242106758471335, 11: 0.30440122864457064, 12: 0.17798535749245717, 13: 0.091792718070562121, 14: 0.04151367840778962, 15: 0.016374158576403286, 16: 0.005600078648666326, 17: 0.0016495826751628524, 18: 0.00041505268344294455, 19: 8.8265332693646513e-05, 20: 1.5645921416012717e-05, 21: 2.2686614437946558e-06}, 4: {0: 1, 1: 1.0, 2: 0.99996039787195767, 3: 0.99946537127142809, 4: 0.9964952116682505, 5: 0.98510959985607005, 6: 0.95379916737257431, 7: 0.88804725915723326, 8: 0.77846074546499799, 9: 0.62973619116839319, 10: 0.46242106758471335, 11: 0.30440122864457064, 12: 0.17798535749245717, 13: 0.091792718070562121, 14: 0.04151367840778962, 15: 0.016374158576403286, 16: 0.005600078648666326, 17: 0.0016495826751628524, 18: 0.00041505268344294455, 19: 8.8265332693646513e-05, 20: 1.5645921416012717e-05, 21: 2.2686614437946558e-06}, 5: {0: 1, 1: 1.0, 2: 0.99996039787195767, 3: 0.99946537127142809, 4: 0.9964952116682505, 5: 0.98510959985607005, 6: 0.95379916737257431, 7: 0.88804725915723326, 8: 0.77846074546499799, 9: 0.62973619116839319, 10: 0.46242106758471335, 11: 0.30440122864457064, 12: 0.17798535749245717, 13: 0.091792718070562121, 14: 0.04151367840778962, 15: 0.016374158576403286, 16: 0.005600078648666326, 17: 0.0016495826751628524, 18: 0.00041505268344294455, 19: 8.8265332693646513e-05, 20: 1.5645921416012717e-05, 21: 2.2686614437946558e-06}, 6: {0: 1, 1: 1, 2: 1.0, 3: 0.99996039787195767, 4: 0.99946537127142809, 5: 0.9964952116682505, 6: 0.98510959985607005, 7: 0.95379916737257431, 8: 0.88804725915723326, 9: 0.77846074546499799, 10: 0.62973619116839319, 11: 0.46242106758471335, 12: 0.30440122864457064, 13: 0.17798535749245717, 14: 0.091792718070562121, 15: 0.04151367840778962, 16: 0.016374158576403286, 17: 0.005600078648666326, 18: 0.0016495826751628524, 19: 0.00041505268344294455, 20: 8.8265332693646513e-05, 21: 1.5645921416012717e-05, 22: 2.2686614437946558e-06}}
 
         assert get_prob_mapping(25, [6, 6, 3, 5, 4]) == probs
@@ -190,13 +199,6 @@ class BiddingUnitTests(unittest.TestCase):
 
         assert get_next_turn(4, 4) == 1
         assert get_next_turn(1, 4) == 2
-
-    def tearDown(self):
-        """Do at end of every test."""
-
-        # (uncomment when testing database)
-        db.session.close()
-        db.drop_all()
 
 
 class ModelUnitTests(unittest.TestCase):
@@ -218,6 +220,13 @@ class ModelUnitTests(unittest.TestCase):
 
         self.players = AbstractPlayer.query.filter(AbstractPlayer.game_id == 1).all()
 
+    def tearDown(self):
+        """Do at end of every test."""
+
+        # (uncomment when testing database)
+        db.session.close()
+        db.drop_all()
+
     def test_get_total_dice(self):
 
         assert get_total_dice(self.players) == 20
@@ -225,13 +234,6 @@ class ModelUnitTests(unittest.TestCase):
     def test_get_players_in_game(self):
 
         assert get_players_in_game(1) == self.players
-
-    def tearDown(self):
-        """Do at end of every test."""
-
-        # (uncomment when testing database)
-        db.session.close()
-        db.drop_all()
 
 
 class ServerTests(unittest.TestCase):
@@ -251,6 +253,13 @@ class ServerTests(unittest.TestCase):
         # Create tables and add sample data (uncomment when testing database)
         db.create_all()
         example_data()
+
+    def tearDown(self):
+        """Do at end of every test."""
+
+        # (uncomment when testing database)
+        db.session.close()
+        db.drop_all()
 
     def testHomepage(self):
         result = self.client.get("/")
@@ -301,13 +310,6 @@ class ServerTests(unittest.TestCase):
                                   follow_redirects=True)
         self.assertNotIn("Let's Play Liar's", result.data)
 
-    def tearDown(self):
-        """Do at end of every test."""
-
-        # (uncomment when testing database)
-        db.session.close()
-        db.drop_all()
-
 
 class DatabaseTests(unittest.TestCase):
     """Flask tests that use the database."""
@@ -331,6 +333,13 @@ class DatabaseTests(unittest.TestCase):
             with c.session_transaction() as sess:
                 sess['username'] = 'l@gmail.com'
 
+    def tearDown(self):
+        """Do at end of every test."""
+
+        # (uncomment when testing database)
+        db.session.close()
+        db.drop_all()
+
     def checkGamePage(self):
         """Check game page."""
         result = self.client.get("/game/1")
@@ -341,13 +350,6 @@ class DatabaseTests(unittest.TestCase):
         result = self.client.get("/logout", follow_redirects=True)
         self.assertIn("You have successfully logged out", result.data)
         self.assertNotIn("Create New", result.data)
-
-    def tearDown(self):
-        """Do at end of every test."""
-
-        # (uncomment when testing database)
-        db.session.close()
-        db.drop_all()
 
 
 if __name__ == "__main__":

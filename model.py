@@ -6,7 +6,7 @@ from datetime import datetime
 from collections import Counter  # remove import after AI logic is changed
 import math
 
-from bidding import get_prob_mapping, get_next_turn
+
 
 db = SQLAlchemy()
 
@@ -14,6 +14,7 @@ db = SQLAlchemy()
 ################################################################################
 #Model definitions
 
+#### move functions out of model
 def get_total_dice(players):
     """Get total # of dice left in the game."""
     total_dice = 0
@@ -202,6 +203,7 @@ class AIPlayer(AbstractPlayer):
     def to_challenge(self, current_bid, total_dice):
         """Determine if AI should challenge the bid or not."""
         #logic change after MVP
+
         if current_bid:
             prob_mapping = get_prob_mapping(total_dice, self.current_die_roll)
             try:
@@ -296,14 +298,14 @@ def connect_to_db(app, uri='postgresql:///liarsdice'):
     """Connect the database to our Flask app."""
 
     # Configure to use PostgreSQL database
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///liarsdice'
+    app.config['SQLALCHEMY_DATABASE_URI'] = uri
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.app = app
     db.init_app(app)
 
 
 if __name__ == "__main__":
-
+    from bidding import get_prob_mapping
     #connect to db and create all tables
     from server import app
     connect_to_db(app)
