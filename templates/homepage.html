@@ -4,7 +4,7 @@
 <h1> Welcome to Liar's Dice! </h1>
 <h2><a href="/instructions">How to play Liars Dice</a></h2>
 
-  {% if session.get('user_id') %}
+  {% if session.get('username') %}
         <h2><a href="/creategame">Create New Liar's Dice Game!</a>
         <br>
         <h2><a href="/loadgame">Load a Saved Game (doesn't exist yet)</a> 

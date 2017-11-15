@@ -202,7 +202,7 @@ class AIPlayer(AbstractPlayer):
     def to_challenge(self, current_bid, total_dice):
         """Determine if AI should challenge the bid or not."""
         #logic change after MVP
-        if current_bid is not None:
+        if current_bid:
             prob_mapping = get_prob_mapping(total_dice, self.current_die_roll)
             try:
                 if prob_mapping[current_bid.die_choice][current_bid.die_count] < 0.35:  # 35% for now
@@ -242,7 +242,7 @@ class AIPlayer(AbstractPlayer):
         die_choice = max(current_die_roll, key=count.get)
         if die_choice == 1:
             die_choice = 2
-        if current_bid is None:
+        if not current_bid:
             die_count = math.ceil(total_dice / len(players))
         else:
             die_count = current_bid.die_count + 1
@@ -292,7 +292,7 @@ class BidHistory(db.Model):
 # Helper functions
 
 
-def connect_to_db(app):
+def connect_to_db(app, uri='postgresql:///liarsdice'):
     """Connect the database to our Flask app."""
 
     # Configure to use PostgreSQL database

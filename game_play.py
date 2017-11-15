@@ -51,7 +51,7 @@ def get_counts_of_dice(players):
     return counts
 
 
-def create_new_game(num_players, difficulty, user_id):
+def create_new_game(num_players, difficulty, username):
     """Create new game, create players, and save to DB. Return new game object"""
     #Create new Game object
     new_game = Game(num_players=num_players, difficulty=difficulty)
@@ -61,7 +61,7 @@ def create_new_game(num_players, difficulty, user_id):
     game = Game.query.order_by('created_at desc').first()
     game_id = game.id
     #Create new Player object (based on signed in user information)
-    user_info = User.query.filter(User.username == user_id).first()
+    user_info = User.query.filter(User.username == username).first()
     player = HumanPlayer(user_info.name, user_info.id, game_id, 1)
     db.session.add(player)
 
@@ -115,7 +115,7 @@ def get_inactive_players_positions(game_id):
     return positions
 
 
-def get_name_of_current_turn_player(game):
+def get_current_turn_player(game):
     """Given a game object, returns the player object of the current turn."""
     current_turn_player = (AbstractPlayer
                            .query

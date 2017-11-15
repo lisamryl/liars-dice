@@ -7,7 +7,7 @@
 </head>
 <body>
 Liar's Dice
-  {% if session.get('user_id') %}
+  {% if session.get('username') %}
         <a href="/logout">Log Out</a>
   {% else %}
         <a href="/login">Sign In</a> <a href="/register">New User? Sign Up</a>

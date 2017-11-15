@@ -37,10 +37,6 @@ def get_prob_mapping(total_dice, current_die_roll):
 # testing = get_prob_mapping(25, [6, 6, 3, 5, 4])
 # print testing
 
-def round_over():
-    """Clean up post round over (clear bid history)"""
-
-
 def get_next_turn(turn_marker, num_players):
     """
     Given the current turn, return the next turn.

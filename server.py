@@ -53,7 +53,7 @@ def login():
 @app.route('/logout')
 def logout():
     """Logs a user out"""
-    del session['user_id']
+    del session['username']
     flash("You have successfully logged out!")
 
     return redirect("/")
@@ -70,7 +70,7 @@ def signin():
 
     if user:
         if user.password == password:
-            session['user_id'] = username
+            session['username'] = username
             flash("You have successfully logged in!")
             return redirect('/')
         else:
@@ -97,7 +97,7 @@ def signup():
         flash("You already have an account associated with that email. Please log in.")
         return redirect('/login')
     else:
-        session['user_id'] = username
+        session['username'] = username
         new_user = User(username=username,
                         password=password,
                         name=name,
@@ -121,9 +121,9 @@ def setup_game():
 
     num_players = int(request.form.get("num-players"))
     difficulty = request.form.get("difficulty")
-    user_id = session['user_id']  # if none, don't allow saving...
+    username = session['username']  # if none, don't allow saving...
 
-    game = create_new_game(num_players, difficulty, user_id)
+    game = create_new_game(num_players, difficulty, username)
 
     url = '/game/{id}'.format(id=game.id)
     return redirect(url)
@@ -140,7 +140,7 @@ def play_game(game_id):
 
     print "game details: {}".format(game)
     total_dice = get_total_dice(players)
-    current_turn_player = get_name_of_current_turn_player(game)
+    current_turn_player = get_current_turn_player(game)
 
     #pass current bids into table on game page...
     bids = (BidHistory.query
@@ -195,7 +195,7 @@ def comp_bidding():
               .first())
     #have comp make a bid, save to db, and set turn marker
     bid = player.comp.bidding()
-    current_turn_player = get_name_of_current_turn_player(game)
+    current_turn_player = get_current_turn_player(game)
     if bid == "Challenge" or bid == "Exact":
         request_items = {'bid': bid.lower(), 'game_id': game_id}
         return jsonify(request_items)
@@ -328,7 +328,7 @@ def player_turn():
     #update turn marker
     update_turn_marker(game)
 
-    current_turn_player = get_name_of_current_turn_player(game)
+    current_turn_player = get_current_turn_player(game)
 
     requests = {'name': player.name,
                 'die_choice': die_choice,
