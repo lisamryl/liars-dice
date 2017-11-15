@@ -5,30 +5,20 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from collections import Counter  # remove import after AI logic is changed
 import math
-
+from bidding import get_prob_mapping
 
 
 db = SQLAlchemy()
 
 
+STARTING_DIE_COUNT = 5
+# 6 sided die
+DIE_MIN = 1
+DIE_MAX = 6
+
+
 ################################################################################
 #Model definitions
-
-#### move functions out of model
-def get_total_dice(players):
-    """Get total # of dice left in the game."""
-    total_dice = 0
-    for player in players:
-        total_dice += player.die_count  # eventually change to sqlalchemy query (with sum)
-    return total_dice
-
-
-def get_players_in_game(game_id):
-    """Get player objects for all players associated with game_id."""
-
-    return AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id).all()
-
-
 class User(db.Model):
     """User class"""
 
@@ -109,7 +99,7 @@ class AbstractPlayer(db.Model):
         self.name = name
         self.position = position
         self.final_place = None
-        self.die_count = 5
+        self.die_count = STARTING_DIE_COUNT
         self.created_at = datetime.now()
         self.last_played = datetime.now()
 
@@ -125,7 +115,7 @@ class AbstractPlayer(db.Model):
         """
         roll = []
         for x in xrange(self.die_count):
-            roll.append(randint(1, 6))
+            roll.append(randint(DIE_MIN, DIE_MAX))
         self.current_die_roll = roll
         self.last_saved = datetime.now()
         db.session.commit()
@@ -281,7 +271,9 @@ class BidHistory(db.Model):
     created_at = db.Column(db.DateTime, nullable=False)
 
     game = db.relationship("Game", backref=db.backref("bids"), order_by=id)
-    player = db.relationship("AbstractPlayer", backref=db.backref("bids"), order_by=id)
+    player = db.relationship("AbstractPlayer",
+                             backref=db.backref("bids"),
+                             order_by=id)
 
     def __init__(self, game_id, player_id, die_choice, die_count):
         self.game_id = game_id
@@ -305,7 +297,7 @@ def connect_to_db(app, uri='postgresql:///liarsdice'):
 
 
 if __name__ == "__main__":
-    from bidding import get_prob_mapping
+    from game_play import get_total_dice, get_players_in_game
     #connect to db and create all tables
     from server import app
     connect_to_db(app)

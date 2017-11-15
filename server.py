@@ -77,7 +77,7 @@ def signin():
             flash("That was not the correct password, please try again.")
             return redirect('/login')
     else:
-        flash("No one is regiestered at this email, please create a new account.")
+        flash("No one is registered at this email, please create a new account.")
         return redirect('/register')
 
 
