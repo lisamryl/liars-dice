@@ -1,5 +1,7 @@
 from random import randint
-from scipy.stats import binom
+from scipy.stats import binom, expon
+from collections import Counter  # remove import after AI logic is changed
+import math
 
 # for a 6 sided die where 1 is wild, each die face value has a 1/3 probability
 # for instance, for a 6, you can roll a 6 or 1 (or 2 of 6 die face values (1/3
@@ -68,3 +70,115 @@ def get_total_dice(players):
 # print testing
 # testing2 = get_prob_mapping(25, [6, 6, 3, 5, 1])
 # print testing2
+
+
+def bid_for_opp(opponent, current_bid, game, players):
+    """Bidding process for AI."""
+    #Get current bid for this AI by looking for most recent bid for the game
+    #return none if there's no current bid
+    current_die_roll = opponent.current_die_roll
+    total_dice = get_total_dice(players)
+
+    prob_map = get_prob_mapping(total_dice, current_die_roll)
+
+    print opponent.name
+
+    print "current bid die choice {}".format(current_bid.die_choice)
+    print "current bid die count {}".format(current_bid.die_count)
+
+    #check if should challenge (add exact later on)
+    if opponent.to_challenge(current_bid, total_dice):
+        return tuple(["Challenge", "Challenge"])
+    if opponent.to_call_exact(current_bid, total_dice):
+        return tuple(["Exact", "Exact"])
+
+    choice = current_bid.die_choice
+    count = current_bid.die_count
+
+    # prob this bid will be good
+    bid_prob = prob_map[choice][count]
+
+    # prob challenge will work
+    challenge_prob = int((1 - bid_prob)*100)
+
+    #prob exact will work
+    exact_prob = int((prob_map[choice][count] - prob_map[choice][count + 1])*100)
+
+    print "challenge prob {}".format(challenge_prob)
+    print "exact prob {}".format(exact_prob)
+
+    # key: tuples of (die choice, die count) value: prob of occurrance
+    options_map = {}
+
+    for k in prob_map:
+        for k2 in prob_map[k]:
+            # never skip more than 2 bids
+            if k > choice and k2 >= count and k2 < count + 2:
+                options_map[tuple([k, k2])] = int(prob_map[k][k2] * 100)
+            if k <= choice and k2 > count and k2 < count + 3:
+                options_map[tuple([k, k2])] = int(prob_map[k][k2] * 100)
+
+    print options_map
+
+    #adjust map for lying factor
+    #increase bottom die choices by factor
+    #(not for skipping a die, just for bidding it)
+    #for instance, if the player has no 2s and last bid was 5 4s, increase prob
+    #(2, 5), but not (2, 6)
+    missing_list = []
+    for x in range(2, 6):
+        if x not in opponent.current_die_roll:
+            missing_list.append(x)
+    print "whats missing {}".format(missing_list)
+
+    for k in prob_map:
+        if k in missing_list and k > choice:
+            options_map[tuple([k, count])] = min(int(options_map[tuple([k, count])] * (1 + opponent.liar_factor)), 100)
+        if k in missing_list and k <= choice:
+            options_map[tuple([k, count + 1])] = min(int(options_map[tuple([k, count + 1])] * (1 + opponent.liar_factor)), 100)
+
+    print options_map
+    #adjust map for agg factor
+    #increase chances for jumping a bid (for a die that the aggresser has)
+    #follow an exponential distribution of mean .5 to bump up agg factor
+    #i.e. (factor -> %): .1 -> 5%, .2 -> 9.5%, .5 -> 22%, .8 -> 33%, .9 -> 36%
+
+    #mean of .5 is 1/lambda, so lambda is 2
+    agg_factor = expon.cdf(opponent.aggressive_factor, 0, 2)
+    print agg_factor
+
+    for k in prob_map:
+        if k not in missing_list and k > choice:
+            options_map[tuple([k, count + 1])] = min(int(options_map[tuple([k, count + 1])] * (1 + agg_factor)), 100)
+        if k not in missing_list and k <= choice:
+            options_map[tuple([k, count + 2])] = min(int(options_map[tuple([k, count + 2])] * (1 + agg_factor)), 100)
+
+    print options_map
+    #for aggressive bidders, bump up probability of challenge and exact
+    #by smaller factor
+    challenge_prob = min(challenge_prob * (1 + agg_factor/2), 100)
+    exact_prob = min(exact_prob * (1 + agg_factor/2), 100)
+
+    #Add exact and challenge into the options
+    options_map["(Challenge, Challenge)"] = challenge_prob
+    options_map["(Exact, Exact)"] = exact_prob
+
+    #adjust map for intel factor
+    #eliminate the bottom choices based on intelligence (note these may not
+    #necessarily be the worst choices, due to liar and agg factors, but are more
+    #likely to be).
+    #20% intel, 12 options, eliminate 20/11 (round down) (or 0)
+    #50% intel, 12 options, eliminate 50/11 (round down) (or 4 options)
+    #80% intel, 12 options, eliminate 80/11 (round down) (or 7 options)
+
+    prob_dictionary = {}
+
+    for k in options_map:
+        prob_dictionary[options_map[k]] = [prob_dictionary.get(options_map[k], 0)].extend(k)
+
+    print prob_dictionary
+    ###Add challenge and exact probs (bump up for agg) to determine final choice
+
+    new_bid = tuple([die_choice, die_count])
+
+    return new_bid

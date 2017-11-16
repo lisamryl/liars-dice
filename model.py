@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from collections import Counter  # remove import after AI logic is changed
 import math
-from bidding import get_prob_mapping, get_total_dice
+from bidding import get_prob_mapping, get_total_dice, bid_for_opp
 
 
 db = SQLAlchemy()
@@ -194,14 +194,39 @@ class AIPlayer(AbstractPlayer):
         """Determine if AI should challenge the bid or not."""
         #logic change after MVP
 
-        if current_bid:
-            prob_mapping = get_prob_mapping(total_dice, self.current_die_roll)
-            try:
-                if prob_mapping[current_bid.die_choice][current_bid.die_count] < 0.35:  # 35% for now
-                    return True
-            except:
+        #determine percent chance to challenge at:
+        if not current_bid:
+            return False
+
+        prob_mapping = get_prob_mapping(total_dice, self.current_die_roll)
+
+        try:
+            print prob_mapping[current_bid.die_choice][current_bid.die_count]
+            if prob_mapping[current_bid.die_choice][current_bid.die_count] < 0.35:  # 35% for now
                 return True
-        return False
+            #later add check to see if other options are better than challenge %-wise
+        except:
+            # if it's not in prob mapping, it's an impossible value based on
+            # what this opponent holds, challenge based on intelligence:
+            # 10% intel --> 25% chance + aggressive factor
+            # 20% intel --> 50% chance + aggressive factor
+            # 30% intel --> 75% chance + aggressive factor
+            # 40% + --> 100% chance - slight intel should catch this
+            intel_factor = min(self.intelligence_factor * 2.5, 1)
+            # 10% agg --> add 1% chance
+            # 25% agg --> add 2.5% chance
+            # 50% agg --> add 5% chance
+            # 90% agg --> add 9% chance
+            aggr_factor = self.aggressive_factor / 10
+            prob_challenge = min(intel_factor + aggr_factor, 1) * 100
+            #select number at random to determine if challenge should be chosen
+            rand_percent = randint(1, 100)
+
+            if rand_percent <= prob_challenge:
+                # i.e. if prob_challenge is 70 and rand percent is 40, challenge
+                return True
+            else:
+                return False
 
     def to_call_exact(self, current_bid, total_dice):
         """Determine if AI should call exact on the bid or not."""
@@ -219,26 +244,30 @@ class AIPlayer(AbstractPlayer):
         game = Game.query.filter(Game.id == self.game_id).first()
         players = AbstractPlayer.query.filter(AbstractPlayer.game_id == self.game_id).all()
 
-        current_die_roll = self.current_die_roll
-        total_dice = get_total_dice(players)
+        die_choice, die_count = bid_for_opp(self, current_bid, game, players)
 
-        #check if should challenge (add exact later on)
-        if self.to_challenge(current_bid, total_dice):
-            return "Challenge"
-        if self.to_call_exact(current_bid, total_dice):
-            return "Exact"
+        if die_choice == "Challenge" or die_choice == "Exact":
+            return die_choice
 
-        #note the below logic will change after MVP is complete!!!!!
-        # syntax from Stack Overflow search
-        count = Counter(current_die_roll)
-        die_choice = max(current_die_roll, key=count.get)
-        if die_choice == 1:
-            die_choice = 2
-        if not current_bid:
-            die_count = math.ceil(total_dice / len(players))
-        else:
-            die_count = current_bid.die_count + 1
-        #end MVP logic
+        # current_die_roll = self.current_die_roll
+        # total_dice = get_total_dice(players)
+
+        # #check if should challenge (add exact later on)
+        # if self.to_challenge(current_bid, total_dice):
+        #     return "Challenge"
+        # if self.to_call_exact(current_bid, total_dice):
+        #     return "Exact"
+
+        # #note the below logic will change after MVP is complete!!!!!
+        # count = Counter(current_die_roll)
+        # die_choice = max(current_die_roll, key=count.get)
+        # if die_choice == 1:
+        #     die_choice = 2
+        # if not current_bid:
+        #     die_count = math.ceil(total_dice / len(players))
+        # else:
+        #     die_count = current_bid.die_count + 1
+        # #end MVP logic
 
         #save bid
         new_bid = BidHistory(self.game_id, self.id, die_choice, die_count)

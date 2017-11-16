@@ -2,16 +2,24 @@
 <html>
 <head>
     <title>Play Liar's Dice</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/
+      3.3.7/css/bootstrap.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 </head>
 <body>
-Liar's Dice
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-lg-6">Liar's Dice</div>
+      <div class="col-lg-6">
   {% if session.get('username') %}
         <a href="/logout">Log Out</a>
   {% else %}
         <a href="/login">Sign In</a> <a href="/register">New User? Sign Up</a>
   {% endif %}
+      </div>
+    </div>
+  </div>
 
   <h2><ul>
     {% for message in get_flashed_messages() %}
@@ -21,5 +29,7 @@ Liar's Dice
 
 {% block content %} put your content here {% endblock %}
 <script src="/static/game_play.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/
+      3.3.7/js/bootstrap.js"></script>
 </body>
 </html>

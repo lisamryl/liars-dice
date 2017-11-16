@@ -149,15 +149,12 @@ def play_game(game_id):
                       .order_by(BidHistory.id)
                       .all())
 
-    request = jsonify({'current_turn': current_turn_player.position})
-
     return render_template("play_game.html",
                            game=game,
                            players=players,
                            total_dice=total_dice,
                            bids=bids,
-                           current_turn_name=current_turn_player.name,
-                           current_turn_marker=request)
+                           current_turn_name=current_turn_player.name)
 
 
 @app.route('/game_over/<game_id>')
