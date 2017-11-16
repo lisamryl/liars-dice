@@ -13,11 +13,11 @@ Liar's Dice
         <a href="/login">Sign In</a> <a href="/register">New User? Sign Up</a>
   {% endif %}
 
-  <ul>
+  <h2><ul>
     {% for message in get_flashed_messages() %}
     {{ message }}
     {% endfor %}
-  </ul>
+  </ul></h2>
 
 {% block content %} put your content here {% endblock %}
 <script src="/static/game_play.js"></script>

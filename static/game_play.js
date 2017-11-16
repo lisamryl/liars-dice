@@ -1,5 +1,28 @@
 "use strict";
+//Javascript on homepage
+function showSavedGames(results) {
+    let game_ids = results['games'];
+    if (results['games']) {
+        $('#loaded-games').append(`<p><ul>`);
+        for (let i in results['games']) {
+            $('#loaded-games').append(`<a href='/game/${game_ids[i]}'>Game ${game_ids[i]} - Click to Resume Play</a><br>`);
+        }
+        $('#loaded-games').append(`</ul></p>`);
+    }
+    else {
+        $('#loaded-games').append(`<p>You have no saved games, create a new one!</p>`);
+    }
+}
 
+
+$('#load-game').on('click', function (evt) {
+    console.log("pressed load games");
+    evt.preventDefault();
+    $.get('/loadgames.json', showSavedGames);
+});
+
+
+//Javascript on Game page
 function getGameId(url) {
     // Returns game id of active game, based on url passed in
     // below syntax from Stack O. to pull last piece of url out as the game_id
@@ -33,6 +56,8 @@ function startRound(request) {
     else {
         $.post('/rolldice.json', {'game_id': request['game_id']}, rollDice);
         setTimeout(function () { window.location.reload(); }, 1000);
+        let game_id = getGameId(window.location);
+        setInterval(compTurn(game_id), 500);        
     }
 }
 
@@ -77,18 +102,21 @@ function handleBid(request) {
     }
 }
 
-$('.roll-dice').on('click', function () {
-
-    let game_id = getGameId(window.location);
-    $.post('/rolldice.json', {'game_id': game_id}, rollDice);
-
-});
-
 $('.start-bid').on('click', function () {
-    let game_id = getGameId(window.location);
-    setInterval(compTurn(game_id), 500);
+        let game_id = getGameId(window.location);
+        setInterval(compTurn(game_id), 500); 
 });
 
+// $( document ).ready(function () {
+//     console.log("reached load function");
+//     if (request[current_turn_marker] == 1) {
+//         $('#player-bidding-div').show();
+//     }
+//     else {
+//         let game_id = getGameId(window.location);
+//         setInterval(compTurn(game_id), 500);         
+//     }
+// });
 // player turn - after submitting
 $('#bid-form').on('submit', function (evt) {
     evt.preventDefault()

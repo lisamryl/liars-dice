@@ -5,12 +5,14 @@
 <h2><a href="/instructions">How to play Liars Dice</a></h2>
 
   {% if session.get('username') %}
-        <h2><a href="/creategame">Create New Liar's Dice Game!</a>
-        <br>
-        <h2><a href="/loadgame">Load a Saved Game (doesn't exist yet)</a> 
+        <h2><a href="/creategame">Create New Liar's Dice Game!</a></h2>
+        <h2><a id='load-game' href="/loadgame">Show Games in Progress</a></h2>
+            <h3><div id = 'loaded-games'>
+
+            </div></h3>
             <!-- also check if there even is a saved game -->
   {% else %}
-         <h2><a href="/playgame">Play Liar's Dice Without Saving (or Log In First to Save)! (doesn't exist yet)</a>       
+         <h2><a href="/playgame">Play Liar's Dice Without Saving (or Log In First to Save)! (doesn't exist yet)</a></h2>
   {% endif %}
 
 {% endblock %}

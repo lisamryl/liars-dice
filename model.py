@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from collections import Counter  # remove import after AI logic is changed
 import math
-from bidding import get_prob_mapping
+from bidding import get_prob_mapping, get_total_dice
 
 
 db = SQLAlchemy()
@@ -114,7 +114,7 @@ class AbstractPlayer(db.Model):
         it returns a roll of 5 dice, where each is a random number from 1-6).
         """
         roll = []
-        for x in xrange(self.die_count):
+        for _ in xrange(self.die_count):
             roll.append(randint(DIE_MIN, DIE_MAX))
         self.current_die_roll = roll
         self.last_saved = datetime.now()
@@ -147,7 +147,7 @@ class HumanPlayer(AbstractPlayer):
 
     def __repr__(self):
         return '<id {} username {} die_count {} >'.format(
-            self.id, self.user.username, self.players.die_count)
+            self.id, self.user.username, self.die_count)
 
 
 class AIPlayer(AbstractPlayer):
@@ -217,7 +217,7 @@ class AIPlayer(AbstractPlayer):
                                  .order_by(BidHistory.created_at.desc())
                                  .first())
         game = Game.query.filter(Game.id == self.game_id).first()
-        players = get_players_in_game(self.game_id)
+        players = AbstractPlayer.query.filter(AbstractPlayer.game_id == self.game_id).all()
 
         current_die_roll = self.current_die_roll
         total_dice = get_total_dice(players)
@@ -297,7 +297,6 @@ def connect_to_db(app, uri='postgresql:///liarsdice'):
 
 
 if __name__ == "__main__":
-    from game_play import get_total_dice, get_players_in_game
     #connect to db and create all tables
     from server import app
     connect_to_db(app)

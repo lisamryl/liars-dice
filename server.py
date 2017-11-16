@@ -9,6 +9,7 @@ from datetime import datetime
 from model import User, Game, AbstractPlayer, HumanPlayer, AIPlayer, BidHistory
 from model import db, connect_to_db
 from game_play import *
+from bidding import get_total_dice
 
 app = Flask(__name__)
 # app.config['JSON_SORT_KEYS'] = False
@@ -148,12 +149,15 @@ def play_game(game_id):
                       .order_by(BidHistory.id)
                       .all())
 
+    request = jsonify({'current_turn': current_turn_player.position})
+
     return render_template("play_game.html",
                            game=game,
                            players=players,
                            total_dice=total_dice,
                            bids=bids,
-                           current_turn_name=current_turn_player.name)
+                           current_turn_name=current_turn_player.name,
+                           current_turn_marker=request)
 
 
 @app.route('/game_over/<game_id>')
@@ -167,6 +171,25 @@ def game_over(game_id):
 
 
 #AJAX routes
+@app.route('/loadgames.json')
+def load_games():
+    """Get list of players by game id, and roll dice for all players."""
+    username = session['username']
+    humans = User.query.filter(User.username == username).first().humans
+
+    game_ids = []
+
+    for human in humans:
+        if human.die_count > 0 and not human.game.is_finished:
+            game_ids.append(human.game_id)
+
+    if len(game_ids) == 0:
+        return jsonify({})
+
+    results = {'games': game_ids}
+    return jsonify(results)
+
+
 @app.route('/rolldice.json', methods=['POST'])
 def roll_dice():
     """Get list of players by game id, and roll dice for all players."""
@@ -215,95 +238,13 @@ def end_turn():
     """End the turn when challenged - check who won and adjust game accordingly.
     Remove bids from DB, check bid, remove a die, next turn."""
     game_id = request.form.get('game_id')
-    bid_type = request.form.get('bid')
-    print "game id {}".format(game_id)
-    print "bid type {}".format(bid_type)
-    game = Game.query.filter(Game.id == game_id).first()
-    p_query = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id)
-    players = p_query.all()
-    human_player = p_query.filter(AbstractPlayer.position == 1).first()
-    #determine number of players who are already out of the game (and have a final place)
-    players_out_of_game = p_query.filter(AbstractPlayer.final_place != None).count()
-    print "players out {}".format(players_out_of_game)
-    num_players = len(players)
-    players_left = num_players - players_out_of_game
-    last_bid = (BidHistory.query
-                          .filter(BidHistory.game_id == game_id)
-                          .order_by(BidHistory.created_at.desc())
-                          .first())
-    print last_bid
-    # print "last bid {} {}".format(last_bid.die_choice, last_bid.die_count)
-    print "game turn marker {}".format(game.turn_marker)
-    challenger = p_query.filter(AbstractPlayer.position == game.turn_marker).first()
-    print "challenger {}".format(challenger)
-    last_bidder = p_query.filter(AbstractPlayer.id == last_bid.player_id).first()
-    print "last bidder {}".format(last_bidder)
+    bid_type = request.form.get('bid').lower()
+    requests = get_bidding_result(game_id, bid_type)
 
-    #pull the final bid that was challenged (or called exact on)
-    counts = get_counts_of_dice(players)
-    #sum of die bid on, plus wilds
-    print "die choice {}".format(last_bid.die_choice)
-    actual_die_count = counts.get(last_bid.die_choice, 0) + counts.get(1, 0)
-
-    #make these "and" if statements (flat versus nested)
-    if bid_type.lower() == 'challenge':
-        print "actual count {}".format(actual_die_count)
-        print "final bid count {}".format(last_bid.die_count)
-        if actual_die_count < last_bid.die_count:
-            print "challenger wins"
-            #challenger wins, last bidder loses a die
-            # message = """{challenger} challenged the bid and was correct!
-            # {last_bidder} loses a die""".format(challenger=challenger.name,
-            #                                     last_bidder=last_bidder.name)
-            last_bidder.die_count -= 1
-            loser = last_bidder
-            winner = challenger
-        else:
-            print "challenger loses"
-            #challenger loses
-            challenger.die_count -= 1
-            loser = challenger
-            winner = last_bidder
-    else:
-        print "exacted"
-        if actual_die_count == last_bid.die_count:
-            print "exact correct"
-            #exact bidder wins
-            #check if there is an extra die to give (total dice < starting dice)
-            if sum(counts.values()) < num_players * 5:
-                challenger.die_count += 1
-            loser = last_bidder
-            winner = challenger
-
-        else:
-            print "exact incorrect"
-            #exact bidder is wrong, loses a die
-            challenger.die_count -= 1
-            loser = challenger
-            winner = last_bidder
-    db.session.commit()
-    print "loser {}".format(loser)
-    print "winner {}".format(winner)
-    is_game_over = check_for_game_over(loser, winner, players_left)
-    next_player_position = update_turn_marker(game, loser)
-    next_player = AbstractPlayer.query.filter(AbstractPlayer.position == next_player_position).first()
-    did_human_lose = human_player.final_place
-    print "did human lose: {}".format(did_human_lose)
-
-    if did_human_lose or is_game_over:
-        print "got to game over"
-        # url = '/game_over/' + str(game_id)
-        # print url
-        # return redirect(url)
-        requests = {'game_id': game_id,
-                    'bid': "game_over"}
-        return jsonify(requests)
-    requests = {'turn_marker_name': next_player.name,
-                'turn_marker': game.turn_marker,
-                'bid': bid_type.lower(),
-                'game_id': game_id}
+    players = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id).all()
     #Clear bid history after round
     BidHistory.query.filter(BidHistory.game_id == game_id).delete()
+    #roll dice for next round
     roll_player_dice(players)
     db.session.commit()
     print requests

@@ -54,6 +54,16 @@ def get_prob_mapping(total_dice, current_die_roll):
     return prob_mapping_by_die
 
 
+def get_total_dice(players):
+    """Get total # of dice left in the game.
+    Arg: player objects (all player objects in the game)
+    Returns the total number of dice the players have (int)."""
+    total_dice = 0
+    for player in players:
+        total_dice += player.die_count  # eventually change to sqlalchemy query (with sum)
+    return total_dice
+
+
 # testing = get_prob_mapping(25, [6, 6, 3, 5, 4])
 # print testing
 # testing2 = get_prob_mapping(25, [6, 6, 3, 5, 1])
