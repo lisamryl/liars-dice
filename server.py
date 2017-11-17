@@ -239,6 +239,8 @@ def end_turn():
     requests = get_bidding_result(game_id, bid_type)
 
     players = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id).all()
+    
+    ####dont do this automatically!!!
     #Clear bid history after round
     BidHistory.query.filter(BidHistory.game_id == game_id).delete()
     #roll dice for next round

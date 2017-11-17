@@ -88,7 +88,6 @@ def get_inactive_players_positions(game_id):
     Args: game id
     Returns: list of player positions for all players that are no longer active
     in that game."""
-    positions = []
     inactive_player_list = (AbstractPlayer
                             .query
                             .filter(AbstractPlayer.game_id == game_id,
@@ -96,8 +95,7 @@ def get_inactive_players_positions(game_id):
                             .order_by(AbstractPlayer.id)
                             .all())
 
-    for player in inactive_player_list:
-        positions.append(player.position)
+    positions = [player.position for player in inactive_player_list]
 
     return positions
 

@@ -1,4 +1,5 @@
 from random import randint
+import random
 from scipy.stats import binom, expon
 from collections import Counter  # remove import after AI logic is changed
 import math
@@ -6,7 +7,7 @@ import math
 # for a 6 sided die where 1 is wild, each die face value has a 1/3 probability
 # for instance, for a 6, you can roll a 6 or 1 (or 2 of 6 die face values (1/3
 #probability))
-DIE_PROB = float(1.0/3)
+DIE_PROB = 1.0/3
 
 # 6 sided die
 DIE_MIN = 1
@@ -28,7 +29,7 @@ def get_prob_mapping(total_dice, current_die_roll):
     the probability that a bid will be successful if challenged, for each
     possibility)"""
     prob_mapping = {}
-    for k in range(0, total_dice - len(current_die_roll) + 1):
+    for k in range(total_dice - len(current_die_roll) + 1):
         #probability that there will be at least k dice (could be more)
         #cdf gives the cumulative density function (prob of k dice or less)
         #take 1 minus that number and get probability of more than that
@@ -76,6 +77,21 @@ def bid_for_opp(opponent, current_bid, game, players):
     """Bidding process for AI."""
     #Get current bid for this AI by looking for most recent bid for the game
     #return none if there's no current bid
+    if not current_bid:
+        #for the first bid (no challenging or exact)
+        #never less than 1 die_count, but random choice for die count between 3
+        die_count = max(1, random.choice([opponent.die_count - 1,
+                                          opponent.die_count - 2,
+                                          opponent.die_count - 3]))
+        die_options = opponent.current_die_roll
+        #add in some options to allow opp to sometimes lie (but infrequently)
+        die_options.extend([2, 3, 4, 5, 6])
+        #remove 1 from the list (not a valid choice since it's wild)
+        die_options = [item for item in die_options if item != 1]
+        die_choice = random.choice(die_options)
+        new_bid = tuple([die_choice, die_count])
+        return new_bid
+
     current_die_roll = opponent.current_die_roll
     total_dice = get_total_dice(players)
 
@@ -195,7 +211,6 @@ def bid_for_opp(opponent, current_bid, game, players):
 
     print prob_dictionary
 
-
     #choose random option from dictionary based on odds
     #get sum of all prob values of a dictionary
     sum_probs = 0
@@ -209,10 +224,19 @@ def bid_for_opp(opponent, current_bid, game, players):
     random_prob = randint(0, sum_probs)
 
     print random_prob
+    accumulated = 0
     for item in sorted(prob_dictionary):
         value = prob_dictionary[item]
-
-
-    # new_bid = tuple([die_choice, die_count])
-
-    # return new_bid
+        item_value = item * len(value)
+        if item_value < (random_prob - accumulated):
+            #if the item isnt in this set of values, add the sum to the
+            #total and continue on to the next set
+            accumulated += item_value
+        else:
+            #if the value is in this set of values, divide to get which index
+            #the chosen option should be at
+            index_num = int(math.floor(float((random_prob - accumulated)) / item))
+            die_choice = value[index_num][0]
+            die_count = value[index_num][1]
+            new_bid = tuple([die_choice, die_count])
+            return new_bid

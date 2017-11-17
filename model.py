@@ -249,26 +249,6 @@ class AIPlayer(AbstractPlayer):
         if die_choice == "Challenge" or die_choice == "Exact":
             return die_choice
 
-        # current_die_roll = self.current_die_roll
-        # total_dice = get_total_dice(players)
-
-        # #check if should challenge (add exact later on)
-        # if self.to_challenge(current_bid, total_dice):
-        #     return "Challenge"
-        # if self.to_call_exact(current_bid, total_dice):
-        #     return "Exact"
-
-        # #note the below logic will change after MVP is complete!!!!!
-        # count = Counter(current_die_roll)
-        # die_choice = max(current_die_roll, key=count.get)
-        # if die_choice == 1:
-        #     die_choice = 2
-        # if not current_bid:
-        #     die_count = math.ceil(total_dice / len(players))
-        # else:
-        #     die_count = current_bid.die_count + 1
-        # #end MVP logic
-
         #save bid
         new_bid = BidHistory(self.game_id, self.id, die_choice, die_count)
         db.session.add(new_bid)
