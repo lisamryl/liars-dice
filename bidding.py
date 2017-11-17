@@ -129,7 +129,6 @@ def bid_for_opp(opponent, current_bid, game, players):
     for x in range(2, 6):
         if x not in opponent.current_die_roll:
             missing_list.append(x)
-    print "whats missing {}".format(missing_list)
 
     for k in prob_map:
         if k in missing_list and k > choice:
@@ -137,7 +136,6 @@ def bid_for_opp(opponent, current_bid, game, players):
         if k in missing_list and k <= choice:
             options_map[tuple([k, count + 1])] = min(int(options_map[tuple([k, count + 1])] * (1 + opponent.liar_factor)), 100)
 
-    print options_map
     #adjust map for agg factor
     #increase chances for jumping a bid (for a die that the aggresser has)
     #follow an exponential distribution of mean .5 to bump up agg factor
@@ -145,7 +143,6 @@ def bid_for_opp(opponent, current_bid, game, players):
 
     #mean of .5 is 1/lambda, so lambda is 2
     agg_factor = expon.cdf(opponent.aggressive_factor, 0, 2)
-    print agg_factor
 
     for k in prob_map:
         if k not in missing_list and k > choice:
@@ -153,7 +150,6 @@ def bid_for_opp(opponent, current_bid, game, players):
         if k not in missing_list and k <= choice:
             options_map[tuple([k, count + 2])] = min(int(options_map[tuple([k, count + 2])] * (1 + agg_factor)), 100)
 
-    print options_map
     #for aggressive bidders, bump up probability of challenge and exact
     #by smaller factor
     challenge_prob = min(challenge_prob * (1 + agg_factor/2), 100)
@@ -167,18 +163,56 @@ def bid_for_opp(opponent, current_bid, game, players):
     #eliminate the bottom choices based on intelligence (note these may not
     #necessarily be the worst choices, due to liar and agg factors, but are more
     #likely to be).
-    #20% intel, 12 options, eliminate 20/11 (round down) (or 0)
-    #50% intel, 12 options, eliminate 50/11 (round down) (or 4 options)
-    #80% intel, 12 options, eliminate 80/11 (round down) (or 7 options)
+    #20% intel, 12 options, eliminate .20/.11 (round down) (or 0)
+    #50% intel, 12 options, eliminate .50/.11 (round down) (or 4 options)
+    #80% intel, 12 options, eliminate .80/.11 (round down) (or 7 options)
+    number_to_remove = math.floor((opponent.intelligence_factor)/.11)
+    print "number to remove {}".format(number_to_remove)
 
+    #convert to a dictionary of probs, remove bottom probs
     prob_dictionary = {}
 
     for k in options_map:
-        prob_dictionary[options_map[k]] = [prob_dictionary.get(options_map[k], 0)].extend(k)
+        if options_map[k] in prob_dictionary.keys():
+            prob_dictionary[options_map[k]].append(k)
+        else:
+            prob_dictionary[options_map[k]] = [k]
 
     print prob_dictionary
-    ###Add challenge and exact probs (bump up for agg) to determine final choice
 
-    new_bid = tuple([die_choice, die_count])
+    num_removed = 0
+    #check through keys of dictionary, if there are enough values to remove
+    #remove them and update the num_removed count. else, exit and stop
+    #removing values.
+    for item in sorted(prob_dictionary):
+        value = prob_dictionary[item]
+        count = len(value)
+        if count < (number_to_remove - num_removed):
+            del prob_dictionary[item]
+            num_removed += count
+        else:
+            break
 
-    return new_bid
+    print prob_dictionary
+
+
+    #choose random option from dictionary based on odds
+    #get sum of all prob values of a dictionary
+    sum_probs = 0
+    for item in sorted(prob_dictionary):
+        value = prob_dictionary[item]
+        #value of the key * number of options = total value for that key
+        sum_probs += (len(value) * int(item))
+
+    print sum_probs
+
+    random_prob = randint(0, sum_probs)
+
+    print random_prob
+    for item in sorted(prob_dictionary):
+        value = prob_dictionary[item]
+
+
+    # new_bid = tuple([die_choice, die_count])
+
+    # return new_bid
