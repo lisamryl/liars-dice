@@ -151,8 +151,8 @@ def show_initial_flash_messages(bid_type, last_bid, actual_die_count, challenger
         flash(challenger.name.title() + " challenged the bid of " + str(last_bid.die_count) + " " + str(last_bid.die_choice) + "s.")
         flash("The correct bid was " + str(actual_die_count) + " (or less) " + str(last_bid.die_choice) + "s.")
     else:
-        flash(challenger.name.title() + " bid exact on " + str(last_bid.die_choice) + str(last_bid.die_choice) + "s.")
-        flash("The correct bid was exactly" + str(actual_die_count) + " " + str(last_bid.die_choice) + "s.")
+        flash(challenger.name.title() + " bid exact on " + str(last_bid.die_count) + str(last_bid.die_choice) + "s.")
+        flash("The correct bid was exactly " + str(actual_die_count) + " " + str(last_bid.die_choice) + "s.")
 
 
 def determine_loser_and_winner(game_id, bid_type, challenger, last_bidder, counts, last_bid):

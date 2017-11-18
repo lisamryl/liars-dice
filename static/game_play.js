@@ -50,14 +50,28 @@ function startRound(request) {
 //restart round (roll dice and begin bidding)
     console.log("start round was called");
     console.log(request);
+
+    let game_id = getGameId(window.location);
+    $.post('/finishturn.json', {'game_id': game_id}, rollDice);
+    setTimeout(function () { window.location.reload(); }, 1000);
+    $('.start-new-turn').hide();
+    // }
+}
+
+function askToStartRound(request) {
+    console.log("got asked to start round...");
+    $('.start-new-turn').show();
+    $('.start-bid').hide();
+    $('#bid-form').hide();
     if (request['bid'] == 'game_over') {
         window.location.replace(`/game_over/${request['game_id']}`);
     }
     else {
-        $.post('/rolldice.json', {'game_id': request['game_id']}, rollDice);
         setTimeout(function () { window.location.reload(); }, 1000);
-        let game_id = getGameId(window.location);
-        setInterval(compTurn(game_id), 500);        
+        console.log("showing next turn");
+        $('.start-new-turn').show();
+        $('.start-bid').hide();
+        $('#bid-form').hide();
     }
 }
 
@@ -66,16 +80,15 @@ function challengeOrExact(request) {
 //handle case where challenge is called
     console.log("challenge or exact function called");
     let formInputs = {'game_id': request['game_id'], 'bid': request['bid']};
-    console.log(formInputs);
-    $.post('/endturn.json', formInputs, startRound);
+    $.post('/endturn.json', formInputs, askToStartRound);
 }
 
 
 function handleBid(request) {
 //handle the bid provided by the player or computer
     console.log("handle bid called");
-    console.log(request['die_choice']);
-    console.log(request['bid']);
+    console.log("start new turn hidden");
+    $('.start-new-turn').hide();
     if (request['bid'] == 'challenge' | request['bid'] == 'exact') {
         console.log("reached if statement true");
         challengeOrExact(request);
@@ -94,6 +107,7 @@ function handleBid(request) {
 
         if (request['turn_marker'] == 1) {
             $('#player-bidding-div').show();
+            $('.start-bid').hide();
         }
         else {
             $('#player-bidding-div').hide();
@@ -101,6 +115,8 @@ function handleBid(request) {
         }
     }
 }
+
+$('.start-new-turn').on('click', startRound)
 
 $('.start-bid').on('click', function () {
         let game_id = getGameId(window.location);
@@ -132,6 +148,6 @@ $('.bid-type').on('click', function (evt) {
     let bid = evt.target.value;
     let game_id = getGameId(window.location);
     console.log(game_id);
-    $.post('/endturn.json', {'game_id': game_id, 'bid': bid}, startRound);
+    $.post('/endturn.json', {'game_id': game_id, 'bid': bid}, askToStartRound);
 
 });

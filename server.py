@@ -187,16 +187,6 @@ def load_games():
     return jsonify(results)
 
 
-@app.route('/rolldice.json', methods=['POST'])
-def roll_dice():
-    """Get list of players by game id, and roll dice for all players."""
-    game_id = request.form.get('game_id')
-    players = get_players_in_game(game_id)
-    player_info = roll_player_dice(players)
-
-    return jsonify(player_info)
-
-
 @app.route('/compturn.json', methods=['POST'])
 def comp_bidding():
     """Start the bidding for a computer"""
@@ -230,6 +220,26 @@ def comp_bidding():
     return jsonify(requests)
 
 
+@app.route('/finishturn.json', methods=['POST'])
+def finish_turn():
+    """Remove the bids from the db, and roll dice for new turn.
+    Do this once player has pressed the finish turn button so they can analyze
+    the results of the turn if they choose."""
+    game_id = request.form.get('game_id')
+    players = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id).all()
+
+    ####dont do this automatically!!!
+    #Clear bid history after round
+    print "deleting bid history...."
+    BidHistory.query.filter(BidHistory.game_id == game_id).delete()
+    #roll dice for next round
+    print "rolling player dice..."
+    player_info = roll_player_dice(players)
+    db.session.commit()
+
+    return jsonify(player_info)
+
+
 @app.route('/endturn.json', methods=['POST'])
 def end_turn():
     """End the turn when challenged - check who won and adjust game accordingly.
@@ -238,15 +248,6 @@ def end_turn():
     bid_type = request.form.get('bid').lower()
     requests = get_bidding_result(game_id, bid_type)
 
-    players = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id).all()
-    
-    ####dont do this automatically!!!
-    #Clear bid history after round
-    BidHistory.query.filter(BidHistory.game_id == game_id).delete()
-    #roll dice for next round
-    roll_player_dice(players)
-    db.session.commit()
-    print requests
     return jsonify(requests)
 
 

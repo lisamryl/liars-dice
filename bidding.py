@@ -102,12 +102,6 @@ def bid_for_opp(opponent, current_bid, game, players):
     print "current bid die choice {}".format(current_bid.die_choice)
     print "current bid die count {}".format(current_bid.die_count)
 
-    #check if should challenge (add exact later on)
-    if opponent.to_challenge(current_bid, total_dice):
-        return tuple(["Challenge", "Challenge"])
-    if opponent.to_call_exact(current_bid, total_dice):
-        return tuple(["Exact", "Exact"])
-
     choice = current_bid.die_choice
     count = current_bid.die_count
 
@@ -168,12 +162,12 @@ def bid_for_opp(opponent, current_bid, game, players):
 
     #for aggressive bidders, bump up probability of challenge and exact
     #by smaller factor
-    challenge_prob = min(challenge_prob * (1 + agg_factor/2), 100)
-    exact_prob = min(exact_prob * (1 + agg_factor/2), 100)
+    challenge_prob = int(min(challenge_prob * (1 + agg_factor/2), 100))
+    exact_prob = int(min(exact_prob * (1 + agg_factor/2), 100))
 
     #Add exact and challenge into the options
-    options_map["(Challenge, Challenge)"] = challenge_prob
-    options_map["(Exact, Exact)"] = exact_prob
+    options_map[tuple(["Challenge", "Challenge"])] = challenge_prob
+    options_map[tuple(["Exact", "Exact"])] = exact_prob
 
     #adjust map for intel factor
     #eliminate the bottom choices based on intelligence (note these may not
@@ -239,4 +233,5 @@ def bid_for_opp(opponent, current_bid, game, players):
             die_choice = value[index_num][0]
             die_count = value[index_num][1]
             new_bid = tuple([die_choice, die_count])
+            print "new bid {}".format(new_bid)
             return new_bid

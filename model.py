@@ -190,49 +190,6 @@ class AIPlayer(AbstractPlayer):
         self.intelligence_factor = round(min(max(numpy.random.normal(
             self.intelligence_mean - self.aggressive_factor/10, .03), 0), 1), 3)
 
-    def to_challenge(self, current_bid, total_dice):
-        """Determine if AI should challenge the bid or not."""
-        #logic change after MVP
-
-        #determine percent chance to challenge at:
-        if not current_bid:
-            return False
-
-        prob_mapping = get_prob_mapping(total_dice, self.current_die_roll)
-
-        try:
-            print prob_mapping[current_bid.die_choice][current_bid.die_count]
-            if prob_mapping[current_bid.die_choice][current_bid.die_count] < 0.35:  # 35% for now
-                return True
-            #later add check to see if other options are better than challenge %-wise
-        except:
-            # if it's not in prob mapping, it's an impossible value based on
-            # what this opponent holds, challenge based on intelligence:
-            # 10% intel --> 25% chance + aggressive factor
-            # 20% intel --> 50% chance + aggressive factor
-            # 30% intel --> 75% chance + aggressive factor
-            # 40% + --> 100% chance - slight intel should catch this
-            intel_factor = min(self.intelligence_factor * 2.5, 1)
-            # 10% agg --> add 1% chance
-            # 25% agg --> add 2.5% chance
-            # 50% agg --> add 5% chance
-            # 90% agg --> add 9% chance
-            aggr_factor = self.aggressive_factor / 10
-            prob_challenge = min(intel_factor + aggr_factor, 1) * 100
-            #select number at random to determine if challenge should be chosen
-            rand_percent = randint(1, 100)
-
-            if rand_percent <= prob_challenge:
-                # i.e. if prob_challenge is 70 and rand percent is 40, challenge
-                return True
-            else:
-                return False
-
-    def to_call_exact(self, current_bid, total_dice):
-        """Determine if AI should call exact on the bid or not."""
-        #logic change after MVP, for now, use false
-        return False
-
     def bidding(self):
         """Bidding process for AI."""
         #Get current bid for this AI by looking for most recent bid for the game
@@ -245,7 +202,9 @@ class AIPlayer(AbstractPlayer):
         players = AbstractPlayer.query.filter(AbstractPlayer.game_id == self.game_id).all()
 
         die_choice, die_count = bid_for_opp(self, current_bid, game, players)
-
+        print "back to model"
+        print die_choice
+        print die_count
         if die_choice == "Challenge" or die_choice == "Exact":
             return die_choice
 
