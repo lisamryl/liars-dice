@@ -2,6 +2,7 @@ from datetime import datetime
 from flask import flash
 
 from model import User, Game, AbstractPlayer, HumanPlayer, AIPlayer, BidHistory, db
+from bidding import get_total_dice, get_prob_mapping
 
 
 ###functions
@@ -59,7 +60,6 @@ def create_new_game(num_players, difficulty, username):
     db.session.commit()
 
     return new_game
-
 
 
 def get_players_in_game(game_id):
@@ -145,16 +145,6 @@ def update_turn_marker(game, losing_player=None):
 
 
 ###END TURN FUNCTIONS
-def show_initial_flash_messages(bid_type, last_bid, actual_die_count, challenger):
-    """Show initial flash messages about what happened during the turn."""
-    if bid_type == "challenge":
-        flash(challenger.name.title() + " challenged the bid of " + str(last_bid.die_count) + " " + str(last_bid.die_choice) + "s.")
-        flash("The correct bid was " + str(actual_die_count) + " (or less) " + str(last_bid.die_choice) + "s.")
-    else:
-        flash(challenger.name.title() + " bid exact on " + str(last_bid.die_count) + str(last_bid.die_choice) + "s.")
-        flash("The correct bid was exactly " + str(actual_die_count) + " " + str(last_bid.die_choice) + "s.")
-
-
 def determine_loser_and_winner(game_id, bid_type, challenger, last_bidder, counts, last_bid):
     """Return a tuple with the winner and loser from the last bid made for round.
     Also, flash messages to inform the user of the outcome.
@@ -166,11 +156,18 @@ def determine_loser_and_winner(game_id, bid_type, challenger, last_bidder, count
     was challenged or if exact was called (and which user made the call).
     Then flashes who was correct and what the outcome was (i.e. a die was lost).
     Returns the loser and winner player objects as a tuple"""
+    messages = []
     #get actual count of die for the die chosen
     actual_die_count = counts.get(last_bid.die_choice, 0) + counts.get(1, 0)
-    #flash who challenged/called exact, and what bid was challenged
-    show_initial_flash_messages(bid_type, last_bid, actual_die_count, challenger)
     num_players = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id).count()
+
+    #flash who challenged/called exact, and what bid was challenged
+    if bid_type == "challenge":
+        messages.append(challenger.name.title() + " challenged the bid of " + str(last_bid.die_count) + " " + str(last_bid.die_choice) + "s.")
+        messages.append("The correct bid was " + str(actual_die_count) + " (or less) " + str(last_bid.die_choice) + "s.")
+    else:
+        messages.append(challenger.name.title() + " bid exact on " + str(last_bid.die_count) + str(last_bid.die_choice) + "s.")
+        messages.append("The correct bid was exactly " + str(actual_die_count) + " " + str(last_bid.die_choice) + "s.")
 
     #determine winner and loser of the challenge/exact bid
     if actual_die_count < last_bid.die_count and bid_type == "challenge":
@@ -178,40 +175,39 @@ def determine_loser_and_winner(game_id, bid_type, challenger, last_bidder, count
         last_bidder.die_count -= 1
         loser = last_bidder
         winner = challenger
-        flash(challenger.name.title() + " was correct, so " + loser.name + " loses a die!")
+        messages.append(challenger.name.title() + " was correct, so " + loser.name + " loses a die!")
     elif actual_die_count >= last_bid.die_count and bid_type == "challenge":
         #bid challenged, challenger loses
         challenger.die_count -= 1
         loser = challenger
         winner = last_bidder
-        flash(challenger.name.title() + " was wrong and loses a die!")
+        messages.append(challenger.name.title() + " was wrong and loses a die!")
     elif actual_die_count == last_bid.die_count and bid_type == "exact":
         #exact bidder wins
         #check if there is an extra die to give (total dice < starting dice)
         if sum(counts.values()) < num_players * 5:
             challenger.die_count += 1
-            flash(challenger.name.title() + " was correct and gains a die!")
+            messages.append(challenger.name.title() + " was correct and gains a die!")
         else:
-            flash(challenger.name.title() + " was correct, but there are no dice to gain!")
+            messages.append(challenger.name.title() + " was correct, but there are no dice to gain!")
         loser = last_bidder
         winner = challenger
     else:
-        flash(challenger.name.title() + " was not correct and loses a die!")
+        messages.append(challenger.name.title() + " was not correct and loses a die!")
         #exact bidder is wrong, loses a die
         challenger.die_count -= 1
         loser = challenger
         winner = last_bidder
     db.session.commit()
 
-    round_results = tuple([loser, winner])
+    round_results = tuple([loser, winner, messages])
 
     return round_results
 
 
 def is_loser_out(loser):
-    """Checks if loser is out of dice and flashes message."""
+    """Checks if loser is out of dice and flashes messages."""
     if loser.die_count == 0:
-        flash(loser.name.title() + " is out of the game!")
         return True
     return False
 
@@ -241,6 +237,7 @@ def check_for_game_over(loser, winner):
 
 
 def get_bidding_result(game_id, bid_type):
+    """Given game id and bid type, determine who won the bid and what happens."""
     game = Game.query.filter(Game.id == game_id).first()
     p_query = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id)
     players = p_query.all()
@@ -259,9 +256,10 @@ def get_bidding_result(game_id, bid_type):
     counts = get_counts_of_dice(players)
     #sum of die bid on, plus wilds
 
-    loser, winner = determine_loser_and_winner(game.id, bid_type, challenger, last_bidder, counts, last_bid)
+    loser, winner, messages = determine_loser_and_winner(game.id, bid_type, challenger, last_bidder, counts, last_bid)
 
     if is_loser_out(loser):
+        messages.append(loser.name.title() + " is out of the game!")
         is_game_over = check_for_game_over(loser, winner)
         #database would now be updated, check if player is out
         did_human_lose = human_player.final_place
@@ -273,9 +271,55 @@ def get_bidding_result(game_id, bid_type):
 
     next_player_position = update_turn_marker(game, loser)
     next_player = AbstractPlayer.query.filter(AbstractPlayer.position == next_player_position).first()
-
+    print messages
     requests = {'turn_marker_name': next_player.name,
                 'turn_marker': game.turn_marker,
                 'bid': bid_type,
-                'game_id': game_id}
+                'game_id': game_id,
+                'messages': messages}
     return requests
+
+
+def get_player_probs(game_id, die_choice, die_count):
+    """Return the probabilities of all possible actions for a player.
+    Given a game id, and the current bid die choice and die count, determine
+    the probability of a successful challenge, exact call. Also, give the
+    probability of all possible bids a player can make.
+    Return the prob_map dictionary"""
+    human_player = (AbstractPlayer.query
+                                  .filter(AbstractPlayer.game_id == game_id,
+                                          AbstractPlayer.position == 1)
+                                  .first())
+    players = get_active_players_in_game(game_id)
+    prob_map = get_prob_mapping(get_total_dice(players),
+                                human_player.current_die_roll)
+
+    #only keep valid bids in the map for a player to choose from.
+    for k in prob_map:
+        if k > die_choice:
+            #delete keys (where k <= choice) up to (not including)
+            #the current die count (since those are not possible to bid on)
+            for i in range(die_count):
+                del prob_map[k][i]
+        else:
+            #delete keys (where k <= choice) up to and including
+            #the current die count (since those are not possibl to bid on)
+            for i in range(die_count + 1):
+                del prob_map[k][i]
+
+    try:
+        challenge_prob = 1 - prob_map[die_choice][die_count]
+    except KeyError:
+        #if it's not in the map, it's not a possible bid based on player's dice.
+        challenge_prob = 1
+    try:
+        exact_prob = prob_map[die_choice][die_count + 1] - prob_map[die_choice][die_count]
+    except KeyError:
+        #if it's not in the map, it's not a possible bid based on player's dice.
+        exact_prob = 0
+
+    #add challenge/exact probs to map
+    prob_map['Challenge']['Challenge'] = challenge_prob
+    prob_map['Exact']['Exact'] = exact_prob
+
+    return prob_map

@@ -55,23 +55,25 @@ function startRound(request) {
     $.post('/finishturn.json', {'game_id': game_id}, rollDice);
     setTimeout(function () { window.location.reload(); }, 1000);
     $('.start-new-turn').hide();
-    // }
 }
 
 function askToStartRound(request) {
     console.log("got asked to start round...");
-    $('.start-new-turn').show();
-    $('.start-bid').hide();
-    $('#bid-form').hide();
     if (request['bid'] == 'game_over') {
         window.location.replace(`/game_over/${request['game_id']}`);
     }
     else {
-        setTimeout(function () { window.location.reload(); }, 1000);
+        $('#game-messages').empty;
+        console.log(request['messages']);
+        for (let i = 0; i < (request['messages'].length); i += 1) {
+        $('#game-messages').append(`${request['messages'][i]}`);            
+        }
+
         console.log("showing next turn");
         $('.start-new-turn').show();
         $('.start-bid').hide();
         $('#bid-form').hide();
+        $('.bid-type').hide();
     }
 }
 
@@ -108,10 +110,20 @@ function handleBid(request) {
         if (request['turn_marker'] == 1) {
             $('#player-bidding-div').show();
             $('.start-bid').hide();
+            console.log(request['player_probs']);
         }
         else {
             $('#player-bidding-div').hide();
             setInterval(compTurn(request['game_id']), 500);
+        $('#probs').empty();
+        
+        // for (let item in request['player_probs']) {
+        //     $('#probs').append(`<tr>
+        //         <td>${request['player_probs']['']}</td>
+        //         <td>${request['player_probs']}</td>
+        //         <td>${request['player_probs']}</td>
+        //         </tr>``);
+        // }
         }
     }
 }

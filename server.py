@@ -139,7 +139,6 @@ def play_game(game_id):
     if players[0].current_die_roll is None and players[0].die_count == 5:
         roll_player_dice(players)
 
-    print "game details: {}".format(game)
     total_dice = get_total_dice(players)
     current_turn_player = get_current_turn_player(game)
 
@@ -211,12 +210,18 @@ def comp_bidding():
         return jsonify(request_items)
 
     update_turn_marker(game)
+    #check if it's a human player next, if so, pass through odds
+    if game.turn_marker == 1:
+        player_probs = get_player_probs(game.id, bid.die_choice, bid.die_count)
+    else:
+        player_probs = None
     requests = {'name': player.name,
                 'die_choice': bid.die_choice,
                 'die_count': bid.die_count,
                 'turn_marker_name': current_turn_player.name,
                 'turn_marker': game.turn_marker,
-                'game_id': game.id}
+                'game_id': game.id,
+                'player_probs': player_probs}
     return jsonify(requests)
 
 

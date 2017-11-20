@@ -73,80 +73,46 @@ def get_total_dice(players):
 # print testing2
 
 
-def bid_for_opp(opponent, current_bid, game, players):
-    """Bidding process for AI."""
-    #Get current bid for this AI by looking for most recent bid for the game
-    #return none if there's no current bid
-    if not current_bid:
-        #for the first bid (no challenging or exact)
-        #never less than 1 die_count, but random choice for die count between 3
-        die_count = max(1, random.choice([opponent.die_count - 1,
-                                          opponent.die_count - 2,
-                                          opponent.die_count - 3]))
-        die_options = opponent.current_die_roll
-        #add in some options to allow opp to sometimes lie (but infrequently)
-        die_options.extend([2, 3, 4, 5, 6])
-        #remove 1 from the list (not a valid choice since it's wild)
-        die_options = [item for item in die_options if item != 1]
-        die_choice = random.choice(die_options)
-        new_bid = tuple([die_choice, die_count])
-        return new_bid
+def get_initial_turn_bid(opponent):
+    """Get the first bid of the round, if an AI is starting the round.
+    Since this is the first bid, there will be no challenge or exact options."""
+    #never less than 1 die_count, but random choice for die count between 3
+    die_count = max(1, random.choice([opponent.die_count - 1,
+                                      opponent.die_count - 2,
+                                      opponent.die_count - 3]))
+    die_options = opponent.current_die_roll
+    #add in some options to allow opp to sometimes lie (but infrequently)
+    die_options.extend([2, 3, 4, 5, 6])
+    #remove 1 from the list (not a valid choice since it's wild)
+    die_options = [item for item in die_options if item != 1]
+    die_choice = random.choice(die_options)
+    return tuple([die_choice, die_count])
 
-    current_die_roll = opponent.current_die_roll
-    total_dice = get_total_dice(players)
 
-    prob_map = get_prob_mapping(total_dice, current_die_roll)
-
-    print opponent.name
-
-    print "current bid die choice {}".format(current_bid.die_choice)
-    print "current bid die count {}".format(current_bid.die_count)
-
-    choice = current_bid.die_choice
-    count = current_bid.die_count
-
-    # prob this bid will be good
-    bid_prob = prob_map[choice][count]
-
-    # prob challenge will work
-    challenge_prob = int((1 - bid_prob)*100)
-
-    #prob exact will work
-    exact_prob = int((prob_map[choice][count] - prob_map[choice][count + 1])*100)
-
-    print "challenge prob {}".format(challenge_prob)
-    print "exact prob {}".format(exact_prob)
-
-    # key: tuples of (die choice, die count) value: prob of occurrance
-    options_map = {}
-
-    for k in prob_map:
-        for k2 in prob_map[k]:
-            # never skip more than 2 bids
-            if k > choice and k2 >= count and k2 < count + 2:
-                options_map[tuple([k, k2])] = int(prob_map[k][k2] * 100)
-            if k <= choice and k2 > count and k2 < count + 3:
-                options_map[tuple([k, k2])] = int(prob_map[k][k2] * 100)
-
-    print options_map
-
-    #adjust map for lying factor
+def apply_liar_factors(opponent, missing_list, options_map, prob_map, choice, count):
+    """Apply opponent's liar factors to prob_map for bidding adjustments."""
     #increase bottom die choices by factor
     #(not for skipping a die, just for bidding it)
     #for instance, if the player has no 2s and last bid was 5 4s, increase prob
     #(2, 5), but not (2, 6)
-    missing_list = []
-    for x in range(2, 6):
-        if x not in opponent.current_die_roll:
-            missing_list.append(x)
-
     for k in prob_map:
         if k in missing_list and k > choice:
-            options_map[tuple([k, count])] = min(int(options_map[tuple([k, count])] * (1 + opponent.liar_factor)), 100)
+            try:
+                options_map[tuple([k, count])] = min(int(options_map[tuple([k, count])] * (1 + opponent.liar_factor)), 100)
+            except KeyError:
+                #for edge cases when the game is almost done and some options don't exist
+                continue
         if k in missing_list and k <= choice:
-            options_map[tuple([k, count + 1])] = min(int(options_map[tuple([k, count + 1])] * (1 + opponent.liar_factor)), 100)
+            try:
+                options_map[tuple([k, count + 1])] = min(int(options_map[tuple([k, count + 1])] * (1 + opponent.liar_factor)), 100)
+            except KeyError:
+                #for edge cases when the game is almost done and some options don't exist
+                continue
+    return options_map
 
-    #adjust map for agg factor
+
+def apply_aggr_factors(opponent, missing_list, options_map, prob_map, choice, count, challenge_prob, exact_prob):
+    """Apply opponent's aggression factors to prob_map for bidding adjustments."""
     #increase chances for jumping a bid (for a die that the aggresser has)
     #follow an exponential distribution of mean .5 to bump up agg factor
     #i.e. (factor -> %): .1 -> 5%, .2 -> 9.5%, .5 -> 22%, .8 -> 33%, .9 -> 36%
@@ -156,9 +122,17 @@ def bid_for_opp(opponent, current_bid, game, players):
 
     for k in prob_map:
         if k not in missing_list and k > choice:
-            options_map[tuple([k, count + 1])] = min(int(options_map[tuple([k, count + 1])] * (1 + agg_factor)), 100)
+            try:
+                options_map[tuple([k, count + 1])] = min(int(options_map[tuple([k, count + 1])] * (1 + agg_factor)), 100)
+            except KeyError:
+                #for edge cases when the game is almost done and some options don't exist
+                continue
         if k not in missing_list and k <= choice:
-            options_map[tuple([k, count + 2])] = min(int(options_map[tuple([k, count + 2])] * (1 + agg_factor)), 100)
+            try:
+                options_map[tuple([k, count + 2])] = min(int(options_map[tuple([k, count + 2])] * (1 + agg_factor)), 100)
+            except KeyError:
+                #for edge cases when the game is almost done and some options don't exist
+                continue
 
     #for aggressive bidders, bump up probability of challenge and exact
     #by smaller factor
@@ -169,7 +143,12 @@ def bid_for_opp(opponent, current_bid, game, players):
     options_map[tuple(["Challenge", "Challenge"])] = challenge_prob
     options_map[tuple(["Exact", "Exact"])] = exact_prob
 
-    #adjust map for intel factor
+    return options_map
+
+
+def apply_intel_factors(opponent, missing_list, options_map, prob_map, choice, count):
+    """Apply opponent's intelligence factors to prob_map for bidding adjustments.
+    Return as a probability dictionary."""
     #eliminate the bottom choices based on intelligence (note these may not
     #necessarily be the worst choices, due to liar and agg factors, but are more
     #likely to be).
@@ -204,7 +183,11 @@ def bid_for_opp(opponent, current_bid, game, players):
             break
 
     print prob_dictionary
+    return prob_dictionary
 
+
+def get_new_bid(prob_dictionary):
+    """Given the probability dictionary, determine the player bid at random."""
     #choose random option from dictionary based on odds
     #get sum of all prob values of a dictionary
     sum_probs = 0
@@ -234,4 +217,74 @@ def bid_for_opp(opponent, current_bid, game, players):
             die_count = value[index_num][1]
             new_bid = tuple([die_choice, die_count])
             print "new bid {}".format(new_bid)
+
             return new_bid
+
+
+def bid_for_opp(opponent, current_bid, game, players):
+    """Bidding process for AI."""
+    #Get current bid for this AI by looking for most recent bid for the game
+    #return none if there's no current bid
+    if not current_bid:
+        new_bid = get_initial_turn_bid(opponent)
+        return new_bid
+
+    current_die_roll = opponent.current_die_roll
+    total_dice = get_total_dice(players)
+
+    prob_map = get_prob_mapping(total_dice, current_die_roll)
+
+    print opponent.name
+
+    print "current bid die choice {}".format(current_bid.die_choice)
+    print "current bid die count {}".format(current_bid.die_count)
+
+    choice = current_bid.die_choice
+    count = current_bid.die_count
+
+    # prob this bid will be good - if it's not in prob map, it's not possible...
+    # challenge if not possible
+    try:
+        bid_prob = prob_map[choice][count]
+    except:
+        return tuple(["Challenge", "Challenge"])
+
+    # prob challenge will work
+    challenge_prob = int((1 - bid_prob)*100)
+
+    #prob exact will work
+    exact_prob = int((prob_map[choice][count] - prob_map[choice][count + 1])*100)
+
+    print "challenge prob {}".format(challenge_prob)
+    print "exact prob {}".format(exact_prob)
+
+    # key: tuples of (die choice, die count) value: prob of occurrance
+    options_map = {}
+
+    for k in prob_map:
+        for k2 in prob_map[k]:
+            # never skip more than 2 bids
+            if k > choice and k2 >= count and k2 < count + 2:
+                options_map[tuple([k, k2])] = int(prob_map[k][k2] * 100)
+            if k <= choice and k2 > count and k2 < count + 3:
+                options_map[tuple([k, k2])] = int(prob_map[k][k2] * 100)
+
+    print options_map
+
+    missing_list = []
+    for x in range(2, 6):
+        if x not in opponent.current_die_roll:
+            missing_list.append(x)
+
+    options_map = apply_liar_factors(opponent, missing_list, options_map,
+                                     prob_map, choice, count)
+    options_map = apply_aggr_factors(opponent, missing_list, options_map,
+                                     prob_map, choice, count, challenge_prob,
+                                     exact_prob)
+    prob_dictionary = apply_intel_factors(opponent, missing_list, options_map,
+                                          prob_map, choice, count)
+
+    #get new bid at random based on prob_dictionary odds
+    new_bid = get_new_bid(prob_dictionary)
+
+    return new_bid
