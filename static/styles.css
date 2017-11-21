@@ -2,7 +2,15 @@ table, th, td {
     border: 1px solid black;
 }
 
-heading {
-    background-color: blue;
+#main-header {
+    background-color: #bbcbcc;
     font-size: 2em;
+}
+
+#game-messages {
+    font-size: 2em;
+}
+
+body {
+    background-color: #bbcbcc;
 }

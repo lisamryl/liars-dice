@@ -104,37 +104,39 @@
     </div>
   </div>
 <br>
-<h2> Player List: </h2>
-<ul id='player-details'>
-{% for player in players %}
-    <li>Name: {{ player.name }}; 
-        Position: {{ player.position }};
-        Die Count: {{ player.die_count }};
-        <span id='die-roll-{{ player.id }}'>Die Roll: {{ player.current_die_roll }}</span>
-        {% if player.comp %}
-        Liar: {{ player.comp.liar_factor }}
-        Aggr: {{ player.comp.aggressive_factor }}
-        Intel: {{ player.comp.intelligence_factor }}
-        {% endif %}
-    </li>
-{% endfor %}
-</ul>
-
-<br>
-
-<h2>Bidding Probabilities</h2>
-<table>
-<tr>
-<th>Die Count</th>
-<th>Die Choice</th>
-<th>Probability</th>
-</tr>
-<tbody id='probs'>
-</tbody>
-</table>
-
-<br>
-
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-12 col-md-8">
+            <h2> Player List: </h2>
+            <ul id='player-details'>
+            {% for player in players %}
+                <li>Name: {{ player.name }}; 
+                    Position: {{ player.position }};
+                    Die Count: {{ player.die_count }};
+                    <span id='die-roll-{{ player.id }}'>Die Roll: {{ player.current_die_roll }}</span>
+                    {% if player.comp %}
+                    Liar: {{ player.comp.liar_factor }}
+                    Aggr: {{ player.comp.aggressive_factor }}
+                    Intel: {{ player.comp.intelligence_factor }}
+                    {% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
+        <div class="col-xs-12 col-md-4">
+            <h2>Bidding Probabilities</h2>
+            <table>
+            <tr>
+            <th>Die Choice</th>
+            <th>Die Count</th>
+            <th>Probability</th>
+            </tr>
+            <tbody id='probs'>
+            </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 <h2><a href="/">Go back to Homepage</a></h2>
 

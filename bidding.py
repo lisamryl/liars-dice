@@ -155,7 +155,10 @@ def apply_intel_factors(opponent, missing_list, options_map, prob_map, choice, c
     #20% intel, 12 options, eliminate .20/.11 (round down) (or 0)
     #50% intel, 12 options, eliminate .50/.11 (round down) (or 4 options)
     #80% intel, 12 options, eliminate .80/.11 (round down) (or 7 options)
-    number_to_remove = math.floor((opponent.intelligence_factor)/.11)
+    max_remove = len(options_map) - 2
+    print "max remove {}".format(max_remove)
+    number_to_remove = min(math.floor((opponent.intelligence_factor)/.11),
+                           max_remove)
     print "number to remove {}".format(number_to_remove)
 
     #convert to a dictionary of probs, remove bottom probs
@@ -176,7 +179,7 @@ def apply_intel_factors(opponent, missing_list, options_map, prob_map, choice, c
     for item in sorted(prob_dictionary):
         value = prob_dictionary[item]
         count = len(value)
-        if count < (number_to_remove - num_removed):
+        if count <= (number_to_remove - num_removed):
             del prob_dictionary[item]
             num_removed += count
         else:
@@ -209,10 +212,13 @@ def get_new_bid(prob_dictionary):
             #if the item isnt in this set of values, add the sum to the
             #total and continue on to the next set
             accumulated += item_value
+            print accumulated
         else:
             #if the value is in this set of values, divide to get which index
             #the chosen option should be at
             index_num = int(math.floor(float((random_prob - accumulated)) / item))
+            print "index num {}".format(index_num)
+            print "value {}".format(value)
             die_choice = value[index_num][0]
             die_count = value[index_num][1]
             new_bid = tuple([die_choice, die_count])
@@ -250,10 +256,22 @@ def bid_for_opp(opponent, current_bid, game, players):
         return tuple(["Challenge", "Challenge"])
 
     # prob challenge will work
-    challenge_prob = int((1 - bid_prob)*100)
+    try:
+        challenge_prob = int((1 - bid_prob)*100)
+    except KeyError:
+        #case where it's not possible to have the bid, challenge prob is 100%
+        challenge_prob = 100
 
     #prob exact will work
-    exact_prob = int((prob_map[choice][count] - prob_map[choice][count + 1])*100)
+    try:
+        exact_prob = int((prob_map[choice][count] - prob_map[choice][count + 1])*100)
+    except KeyError:
+        try:
+            #case where prob of count + 1 is 0, and not in key
+            exact_prob = int((prob_map[choice][count])*100)
+        except KeyError:
+            #case where prob of count + 1 and count is 0
+            exact_prob = 0
 
     print "challenge prob {}".format(challenge_prob)
     print "exact prob {}".format(exact_prob)

@@ -204,12 +204,12 @@ def comp_bidding():
               .first())
     #have comp make a bid, save to db, and set turn marker
     bid = player.comp.bidding()
-    current_turn_player = get_current_turn_player(game)
     if bid == "Challenge" or bid == "Exact":
         request_items = {'bid': bid.lower(), 'game_id': game_id}
         return jsonify(request_items)
 
     update_turn_marker(game)
+    current_turn_player = get_current_turn_player(game)
     #check if it's a human player next, if so, pass through odds
     if game.turn_marker == 1:
         player_probs = get_player_probs(game.id, bid.die_choice, bid.die_count)

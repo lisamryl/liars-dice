@@ -1,4 +1,5 @@
 "use strict";
+
 //Javascript on homepage
 function showSavedGames(results) {
     let game_ids = results['games'];
@@ -33,6 +34,7 @@ function rollDice(request) {
 
     //Refresh data in player details
     console.log("dice rolled");
+    console.log(request);
     for (let player_id in request) {
     $('#die-roll-' + player_id).empty();
 
@@ -66,7 +68,7 @@ function askToStartRound(request) {
         $('#game-messages').empty;
         console.log(request['messages']);
         for (let i = 0; i < (request['messages'].length); i += 1) {
-        $('#game-messages').append(`${request['messages'][i]}`);            
+        $('#game-messages').append(`${request['messages'][i]} `);            
         }
 
         console.log("showing next turn");
@@ -105,25 +107,28 @@ function handleBid(request) {
             </tr>`);
         console.log("updating bids");
         $('#turn-marker').empty();
+        console.log(request['turn_marker_name']);
         $('#turn-marker').append(`Current Turn: ${request['turn_marker_name']}`);
 
         if (request['turn_marker'] == 1) {
             $('#player-bidding-div').show();
             $('.start-bid').hide();
             console.log(request['player_probs']);
+            $('#probs').empty();
+            for (let die_choice in request['player_probs']) {
+                for (let die_count in request['player_probs'][die_choice]) {
+                    $('#probs').append(`<tr>
+                        <td>${die_choice}</td>
+                        <td>${die_count}</td>
+                        <td>${Math.round(request['player_probs'][die_choice][die_count] * 100)}%</td>
+                        </tr>`);
+                }
+            }
         }
         else {
             $('#player-bidding-div').hide();
+            // $('#probs').hide(); need to fix later
             setInterval(compTurn(request['game_id']), 500);
-        $('#probs').empty();
-        
-        // for (let item in request['player_probs']) {
-        //     $('#probs').append(`<tr>
-        //         <td>${request['player_probs']['']}</td>
-        //         <td>${request['player_probs']}</td>
-        //         <td>${request['player_probs']}</td>
-        //         </tr>``);
-        // }
         }
     }
 }
