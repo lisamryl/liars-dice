@@ -290,6 +290,32 @@ def player_turn():
 
     return jsonify(requests)
 
+
+@app.route('/game_details.json')
+def get_game_details():
+    """Get details needed to update the values in the die count filters."""
+    game_id = request.args.get('game_id')
+    game = Game.query.filter(Game.id == game_id).first()
+    players = get_active_players_in_game(game.id)
+    # if this is the first time the page ever loads, roll dice
+    if players[0].current_die_roll is None and players[0].die_count == 5:
+        roll_player_dice(players)
+
+    total_dice = get_total_dice(players)
+
+    #pass current bids into table on game page...
+    last_bid = (BidHistory.query
+                          .filter(BidHistory.game_id == game_id)
+                          .order_by(BidHistory.created_at.desc())
+                          .first())
+
+    results = {'total_dice': total_dice,
+               'die_count': last_bid.die_count,
+               'die_choice': last_bid.die_choice}
+
+    return jsonify(results)
+
+
 if __name__ == "__main__":
     # We have to set debug=True here, since it has to be True at the
     # point that we invoke the DebugToolbarExtension

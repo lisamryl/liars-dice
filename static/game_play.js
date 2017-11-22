@@ -112,13 +112,17 @@ function updateOptions(request) {
     console.log("update options called");
     $("#player-die-count-choices").empty();
     $("#player-die-count-choices").append(`<select name = 'player-die-count'>`)
+    console.log(request['die_count']);
+    console.log(request['die_choice']);
     for (let i = 0; i <= request['total_dice']; i += 1) {
         if (i > request['die_count'] && $("#player-die-choice").val() <= request['die_choice']) {
            $("#player-die-count-choices").append(`<option value="${i}">${i} dice</option>`);
            console.log(i);
         }
     }
-    $("#player-die-count-choices").append(`</select>`)
+    setTimeout(function () {
+        $("#player-die-count-choices").append(`</select>`);
+        }, 500);
 }
 
 
@@ -198,7 +202,10 @@ $('.bid-type').on('click', function (evt) {
 });
 
 //update options for die count when die choice is changed
-$('#player-die-choice').on('change', updateOptions)
+$('#player-die-choice').on('change', function (evt) {
+    let game_id = getGameId(window.location);
+    $.get('/game_details.json', {'game_id': game_id}, updateOptions);
+});
 
 //hover over tips
 $(document).ready(function(){
