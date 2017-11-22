@@ -1,144 +1,153 @@
 {% extends 'base.html' %}
 {% block content %}
-<div id="game-messages" class="container">
-    <div class="row">
-        <div class="col-xs-12">
-        </div>
+<div class="container">
+  <div class="row">
+    <div class="col-xs-12 col-md-8">
+      <h1> Let's Play Liar's Dice </h1>
+      <div id="game-table">
+          <img id="table-image" src="/static/table.png">
+          <img id="cup-1" src="/static/cup.png">
+          <img id="cup-2" src="/static/cup.png">
+          <img id="cup-3" src="/static/cup.png">
+          <img id="cup-4" src="/static/cup.png">
+          <img id="cup-5" src="/static/cup.png">
+          <img id="cup-6" src="/static/cup.png">
+          {% for player in players %}
+            <span id="player-{{  player.position  }}" class="player-details">
+              <b>{{  player.name.title()  }}</b><br>
+              Dice Left: {{ player.die_count }}<br></span>
+              <span id="player-{{  player.position  }}-factors">{% if player.comp %}
+                Liar Factor: {{ player.comp.liar_factor }}<br>
+                Aggr Factor: {{ player.comp.aggressive_factor }}<br>
+                Intel Factor: {{ player.comp.intelligence_factor }}</span>
+              {% else %}
+                <span id="player-die-roll">Current Die Roll: {{ player.current_die_roll }}</span>
+              {% endif %}
+          {% endfor %}
+
+          
+      </div>
+      <div id="game-messages">
+      </div>
+<!--       <h2> Player List: </h2>
+      <ul id='player-details'>
+      {% for player in players %}
+        <li>Name: {{ player.name }}; 
+          Position: {{ player.position }};
+          <span id='die-count-{{ player.id }}'>Die Count: {{ player.die_count }}</span>
+          <span id='die-roll-{{ player.id }}'>Die Roll: {{ player.current_die_roll }}</span>
+          {% if player.comp %}
+          Liar: {{ player.comp.liar_factor }}
+          Aggr: {{ player.comp.aggressive_factor }}
+          Intel: {{ player.comp.intelligence_factor }}
+          {% endif %}
+        </li>
+      {% endfor %}
+      </ul> -->
+
     </div>
-</div>
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-xs-12 col-md-8">
-            <h1> Let's Play Liar's Dice </h1>
-        </div>
-        <div class="col-xs-12 col-md-4">
-            <h3>Total Dice: {{ total_dice }} Difficulty: {{ game.difficulty }}</h3>
-            <h3 id='turn-marker'> Current Turn: {{ current_turn_name }}</h3>
-        </div>
-    </div>
-</div>
-  <div class="container-fluid">
-    <div class="row">
-        <div class="col-xs-12 col-md-8">
-            <img src="/static/table.png">
-        </div>
-        <div class="col-xs-12 col-md-4">
-            <h2>Bidding Action</h2>
-            <table>
-            <tr>
+    <div class="col-xs-12 col-md-4">
+      <h3>Total Dice: {{ total_dice }} Difficulty: 
+        {% if game.difficulty == 'h' %} Hard
+        {% elif game.difficulty == 'm' %} Medium {% else %} Easy {% endif %}
+      </h3>
+      <h3 id='turn-marker'> Current Turn: {{ current_turn_name }}</h3>
+      <div class="game-table-forms">
+        <h2>Bidding Action</h2>
+        <table class="table table-sm table-responsive table-bordered">
+          <tr>
             <th>Player</th>
-            <th>Die</th>
-            <th># of Dice</th>
-            </tr>
-            <tbody id='bids'>
-                    {% for bid in bids %}
-                    <tr>
-                    <td class='player-name'>{{ bid.player.name }}</td>
-                    <td class='die-choice'>{{ bid.die_choice }}</td>
-                    <td class='die-count'>{{ bid.die_count }}</td>
-                    </tr>
-                    {% endfor %}
-            </tbody>
-            </table>
+            <th>Die Choice</th>
+            <th>Dice Count</th>
+          </tr>
+          <tbody id='bids'>
+                  {% for bid in bids %}
+                  <tr>
+                  <td class='player-name'>{{ bid.player.name }}</td>
+                  <td class='die-choice'>{{ bid.die_choice }}</td>
+                  <td class='die-count'>{{ bid.die_count }}</td>
+                  </tr>
+                  {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <br>
+      <button class='btn-primary btn-sm start-bid'{% if game.turn_marker == 1 %} 
+      hidden
+      {% endif %}>
+      Start Player Bidding</button>
+      <br>
+      <button class='btn-primary btn-sm start-new-turn'>Start Next Turn</button>
+      <br>
+      <div id='player-bidding-div' {% if game.turn_marker != 1 %} 
+      hidden
+      {% endif %}>
+      <br>
+      <div id="player-bidding-tables">
+        <h3>Place Your Bid!</h3>
+        <form id='bid-form' action='/playerturn', method='POST' >
+          <input type='hidden' value='{{ game.id }}' name='game-id'>
+          <div class="form-group">Which die do you want to bid on?
+            <select name = 'player-die-choice'>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+            </select><br>
+            How many dice do you want to bid?
+            <select name = 'player-die-count'>
+                <option value="1">1 die</option>
+                <option value="2">2 dice</option>
+                <option value="3">3 dice</option>
+                <option value="4">4 dice</option>
+                <option value="5">5 dice</option>
+                <option value="6">6 dice</option>
+                <option value="7">7 dice</option>
+                <option value="8">8 dice</option>
+                <option value="9">9 dice</option>
+                <option value="10">10 dice</option>
+                <option value="11">11 dice</option>
+                <option value="12">12 dice</option>
+                <option value="13">13 dice</option>
+                <option value="14">14 dice</option>
+                <option value="15">15 dice</option>
+                <option value="16">16 dice</option>
+                <option value="17">17 dice</option>
+                <option value="18">18 dice</option>
+                <option value="19">19 dice</option>
+                <option value="20">20 dice</option>
+                <option value="21">21 dice</option>
+                <option value="22">22 dice</option>
+                <option value="23">23 dice</option>
+                <option value="24">24 dice</option>
+                <option value="25">25 dice</option>
+                <option value="26">26 dice</option>
+                <option value="27">27 dice</option>
+                <option value="28">28 dice</option>
+                <option value="29">29 dice</option>
+                <option value="30">30 dice</option>
+            </select>
             <br>
-                <button class='start-bid'{% if game.turn_marker == 1 %} 
-                hidden
-                {% endif %}>
-                Start Player Bidding</button>
-                <br>
-                <br>
-                <button class='start-new-turn'>Start Next Turn</button>
-                <br>
-                <div id='player-bidding-div' {% if game.turn_marker != 1 %} 
-                hidden
-                {% endif %}>
-                <button class='bid-type' id='challenge' value='challenge'>Challenge</button>
-                <button class='bid-type' id='exact' value='exact'>Exact</button>
-                <form id='bid-form' action='/playerturn', method='POST' >
-                <input type='hidden' value='{{ game.id }}' name='game-id'>
-                Which die do you want to bid on?
-                    <select name = 'player-die-choice'>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                    </select><br>
-                How many do you want to bid?
-                    <select name = 'player-die-count'>
-                        <option value="1">1 die</option>
-                        <option value="2">2 dice</option>
-                        <option value="3">3 dice</option>
-                        <option value="4">4 dice</option>
-                        <option value="5">5 dice</option>
-                        <option value="6">6 dice</option>
-                        <option value="7">7 dice</option>
-                        <option value="8">8 dice</option>
-                        <option value="9">9 dice</option>
-                        <option value="10">10 dice</option>
-                        <option value="11">11 dice</option>
-                        <option value="12">12 dice</option>
-                        <option value="13">13 dice</option>
-                        <option value="14">14 dice</option>
-                        <option value="15">15 dice</option>
-                        <option value="16">16 dice</option>
-                        <option value="17">17 dice</option>
-                        <option value="18">18 dice</option>
-                        <option value="19">19 dice</option>
-                        <option value="20">20 dice</option>
-                        <option value="21">21 dice</option>
-                        <option value="22">22 dice</option>
-                        <option value="23">23 dice</option>
-                        <option value="24">24 dice</option>
-                        <option value="25">25 dice</option>
-                        <option value="26">26 dice</option>
-                        <option value="27">27 dice</option>
-                        <option value="28">28 dice</option>
-                        <option value="29">29 dice</option>
-                        <option value="30">30 dice</option>
-                    </select><br>
-                    <input type="submit" value="Bid!" id='player-bidding'>
-                </form>
-                </div>
-        </div>
-    </div>
-  </div>
-<br>
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-xs-12 col-md-8">
-            <h2> Player List: </h2>
-            <ul id='player-details'>
-            {% for player in players %}
-                <li>Name: {{ player.name }}; 
-                    Position: {{ player.position }};
-                    Die Count: {{ player.die_count }};
-                    <span id='die-roll-{{ player.id }}'>Die Roll: {{ player.current_die_roll }}</span>
-                    {% if player.comp %}
-                    Liar: {{ player.comp.liar_factor }}
-                    Aggr: {{ player.comp.aggressive_factor }}
-                    Intel: {{ player.comp.intelligence_factor }}
-                    {% endif %}
-                </li>
-            {% endfor %}
-            </ul>
-        </div>
-        <div class="col-xs-12 col-md-4">
-            <h2>Bidding Probabilities</h2>
-            <table>
-            <tr>
+            <button type="submit" class='btn-primary btn-sm' id='player-bidding' value="Bid!">Submit Bid!</button>      
+            <button class='btn-primary btn-sm bid-type' id='challenge' value='challenge'>Challenge</button>
+            <button class='btn-primary btn-sm bid-type' id='exact' value='exact'>Exact</button>
+          </div>
+        </form>
+      </div>
+      <div id="bid-probs" class="game-table-forms">
+        <h2>Bidding Probabilities</h2>
+        <table class="table table-sm table-responsive table-bordered">
+          <tr>
             <th>Die Choice</th>
             <th>Die Count</th>
             <th>Probability</th>
-            </tr>
-            <tbody id='probs'>
-            </tbody>
-            </table>
-        </div>
+          </tr>
+          <tbody id='probs'>
+          </tbody>
+        </table>
+      </div>
     </div>
+  </div>
 </div>
-
-<h2><a href="/">Go back to Homepage</a></h2>
-
-
 {% endblock %}

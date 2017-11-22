@@ -36,9 +36,10 @@ function rollDice(request) {
     console.log("dice rolled");
     console.log(request);
     for (let player_id in request) {
-    $('#die-roll-' + player_id).empty();
-
-    $('#die-roll-' + player_id).append(`Die Roll: [${request['player_id']}]`);
+        $('#die-count-' + player_id).empty();
+        $('#die-count-' + player_id).append(`Die Count: ${request[player_id].length}`);
+        $('#die-roll-' + player_id).empty();
+        $('#die-roll-' + player_id).append(`Die Roll: [${request[player_id]}]`);
     }
 }
 
@@ -55,33 +56,52 @@ function startRound(request) {
 
     let game_id = getGameId(window.location);
     $.post('/finishturn.json', {'game_id': game_id}, rollDice);
-    setTimeout(function () { window.location.reload(); }, 1000);
+    // setTimeout(function () { window.location.reload(); }, 1000);
+    //restarting round, clear out game messages, clear out probability table,
+    //and clear out bidding table.
+    $('#game-messages').empty;
+    $('#bids').empty;
+    $('#probs').empty;
+    //Hide "start new turn", we don't need it anymore
     $('.start-new-turn').hide();
+    if (request['turn_marker'] == 1) {
+        //if human's turn, show their bid form, hid option to start opponent bids
+        $('#bid-form').show();
+        $('.bid-type').show();
+        $('.start-bid').hide();
+    }
+    else {
+        //if AI turn, hide human bid form, show button to start opponent bids.
+        $('#bid-form').hide();
+        $('.bid-type').hide();
+        $('.start-bid').show();
+    }
 }
 
 function askToStartRound(request) {
     console.log("got asked to start round...");
+    // if game over, bring to game over screen
     if (request['bid'] == 'game_over') {
         window.location.replace(`/game_over/${request['game_id']}`);
     }
     else {
+        // add messages about what happened in the last round
         $('#game-messages').empty;
         console.log(request['messages']);
         for (let i = 0; i < (request['messages'].length); i += 1) {
         $('#game-messages').append(`${request['messages'][i]} `);            
         }
-
+        // show button for player to start the next turn (hide all other buttons)
         console.log("showing next turn");
         $('.start-new-turn').show();
         $('.start-bid').hide();
-        $('#bid-form').hide();
-        $('.bid-type').hide();
+        $('#player-bidding-div').hide();
     }
 }
 
 
 function challengeOrExact(request) {
-//handle case where challenge is called
+//handle case where challenge is called by computer
     console.log("challenge or exact function called");
     let formInputs = {'game_id': request['game_id'], 'bid': request['bid']};
     $.post('/endturn.json', formInputs, askToStartRound);
@@ -140,17 +160,7 @@ $('.start-bid').on('click', function () {
         setInterval(compTurn(game_id), 500); 
 });
 
-// $( document ).ready(function () {
-//     console.log("reached load function");
-//     if (request[current_turn_marker] == 1) {
-//         $('#player-bidding-div').show();
-//     }
-//     else {
-//         let game_id = getGameId(window.location);
-//         setInterval(compTurn(game_id), 500);         
-//     }
-// });
-// player turn - after submitting
+//when player submits a bid
 $('#bid-form').on('submit', function (evt) {
     evt.preventDefault()
     let formInputs = {
@@ -161,6 +171,7 @@ $('#bid-form').on('submit', function (evt) {
     $.post('/playerturn.json', formInputs, handleBid);
 });
 
+//clicked when player chooses challenge or exact
 $('.bid-type').on('click', function (evt) {
     let bid = evt.target.value;
     let game_id = getGameId(window.location);

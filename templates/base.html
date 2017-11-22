@@ -2,23 +2,36 @@
 <html>
 <head>
     <title>Play Liar's Dice</title>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
     <link rel="stylesheet" href="/static/styles.css">
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 </head>
 <body>
-  <div id="main-header" class="container-fluid">
-    <div class="row">
-      <div id="heading" class="col-xs-3">Liar's Dice</div>
+<!--   <div id="main-header" class="container-fluid">
+    <div class="row"> -->
+
+<nav class="navbar navbar-light bg-light">
+    <a class="navbar-brand" href="/">
+      <img src="/static/dice.png" width="30" height="30" class="d-inline-block align-top" alt=""> Liar's Dice</a>
+
+        {% if session.get('username') %}
+                <a id="login" class="navbar-brand" href="/logout">Log Out</a>
+          {% else %}
+                <a id="login" class="navbar-brand" href="/login">Sign In</a> <a class="navbar-brand" href="/register">New User? Sign Up</a>
+          {% endif %}
+</nav>
+
+
+<!--       <div id="heading" class="col-xs-3">Liar's Dice</div>
       <div id="logging" class="col-xs-offset-6 col-xs-3">
   {% if session.get('username') %}
         <a href="/logout">Log Out</a>
   {% else %}
         <a href="/login">Sign In</a> <a href="/register">New User? Sign Up</a>
   {% endif %}
-      </div>
-    </div>
-  </div>
+      </div> -->
+<!--     </div>
+  </div> -->
 
   <h2><ul>
     {% for message in get_flashed_messages() %}

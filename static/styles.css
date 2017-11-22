@@ -1,16 +1,144 @@
-table, th, td {
-    border: 1px solid black;
-}
-
-#main-header {
-    background-color: #bbcbcc;
-    font-size: 2em;
-}
-
 #game-messages {
     font-size: 2em;
 }
 
 body {
     background-color: #bbcbcc;
+    color: #020611;
+}
+
+.btn-sm, .btn-group-sm > .btn {
+    background-color: #2d4354;
+    border-color: #020611;
+    color: #bbcbcc;
+}
+
+
+
+.table > thead > tr > th, 
+.table > tbody > tr > th,
+.table > tfoot > tr > th, 
+.table > thead > tr > td, 
+.table > tbody > tr > td, 
+.table > tfoot > tr > td {
+    height: 1em;
+    font-size: 1em;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
+    text-align: center;
+    background-color: #aa9eaf;
+    color: white;
+}
+
+.game-table-forms {
+    background-color: #aa9eaf;
+    text-align: center;
+    color: white;
+    margin: 0 auto;
+
+}
+
+#table-image {
+    position: absolute;
+    top: 50px;
+    left: -100px;
+    height: auto;
+    width: 100%;
+    max-width: 1500px;
+    z-index: 4;
+    padding-left: 0;
+}
+
+/*for player in position 2*/
+#cup-2 {
+    position: absolute;
+    top: 40px;
+    left: 30px;
+    height: 5em;
+    z-index: 5;
+}
+
+/*for player in position 1*/
+#cup-1 {
+    position: absolute;
+    top: 270px;
+    left: 30px;
+    height: 5em;
+    z-index: 5;
+}
+
+/*for player in position 3*/
+#cup-3 {
+    position: absolute;
+    top: 40px;
+    left: 450px;
+    height: 5em;
+    z-index: 5;
+}
+
+/*for player in position 4*/
+#cup-4 {
+    position: absolute;
+    top: 270px;
+    left: 450px;
+    height: 5em;
+    z-index: 5;
+}
+
+/*for player in position 5*/
+#cup-5 {
+    position: absolute;
+    top: 150px;
+    left: -30px;
+    height: 5em;
+    z-index: 5;
+}
+
+/*for player in position 6*/
+#cup-6 {
+    position: absolute;
+    top: 150px;
+    left: 530px;
+    height: 5em;
+    z-index: 5;
+}
+
+#player-bidding {
+    margin-right: 4em;
+}
+
+.player-details {
+    z-index: 50;
+    position: absolute;
+    color: white;
+}
+
+#player-1 {
+    top: 270px;
+    left: 30px;
+}
+
+#player-2 {
+    top: 40px;
+    left: 30px;
+}
+
+#player-3 {
+    top: 40px;
+    left: 450px;
+}
+
+#player-4 {
+    top: 270px;
+    left: 450px;
+}
+
+#player-5 {
+    top: 150px;
+    left: -30px;
+}
+
+#player-6 {
+    top: 150px;
+    left: 530px;
 }
