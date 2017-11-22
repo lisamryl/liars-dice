@@ -186,7 +186,7 @@ def determine_loser_and_winner(game_id, bid_type, challenger,
         loser = last_bidder
         winner = challenger
         messages.append(challenger.name.title() + " was correct, so " +
-                        loser.name + " loses a die!")
+                        loser.name.title() + " loses a die!")
     elif actual_die_count >= last_bid.die_count and bid_type == "challenge":
         #bid challenged, challenger loses
         challenger.die_count -= 1
@@ -341,7 +341,7 @@ def get_player_probs(game_id, die_choice, die_count):
             for i in range(die_count):
                 del prob_map[k][i]
             #delete keys for bigger numbers, which are less likely to be bid on
-            for i in range(die_count + 3, total_dice):
+            for i in range(die_count + 2, total_dice):
                 try:
                     del prob_map[k][i]
                 #key may not exist
@@ -353,7 +353,7 @@ def get_player_probs(game_id, die_choice, die_count):
             for i in range(die_count + 1):
                 del prob_map[k][i]
             #delete keys for bigger numbers, which are less likely to be bid on
-            for i in range(die_count + 4, total_dice):
+            for i in range(die_count + 3, total_dice):
                 try:
                     del prob_map[k][i]
                 #key may not exist

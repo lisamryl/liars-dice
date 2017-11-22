@@ -1,5 +1,9 @@
 #game-messages {
     font-size: 2em;
+    top: 250px;
+    left: -50px;
+    position: relative;
+    color: red;
 }
 
 body {
@@ -13,7 +17,18 @@ body {
     color: #bbcbcc;
 }
 
+#ld-header {
+    left: 75px;
+    position: relative;
+}
 
+#die-total {
+    z-index: 50;
+    position: absolute;
+    color: white;
+    top: 200px;
+    left: 220px;
+}
 
 .table > thead > tr > th, 
 .table > tbody > tr > th,
@@ -25,16 +40,20 @@ body {
     font-size: 1em;
     padding-top: 0.1em;
     padding-bottom: 0.1em;
+    padding-left: 0.75em;
+    padding-right: 0.75em;
     text-align: center;
     background-color: #aa9eaf;
     color: white;
+    margin: 0px auto;
 }
 
 .game-table-forms {
     background-color: #aa9eaf;
     text-align: center;
     color: white;
-    margin: 0 auto;
+    margin: 0px auto;
+    padding: 0.3em;
 
 }
 
@@ -49,15 +68,6 @@ body {
     padding-left: 0;
 }
 
-/*for player in position 2*/
-#cup-2 {
-    position: absolute;
-    top: 40px;
-    left: 30px;
-    height: 5em;
-    z-index: 5;
-}
-
 /*for player in position 1*/
 #cup-1 {
     position: absolute;
@@ -67,19 +77,29 @@ body {
     z-index: 5;
 }
 
-/*for player in position 3*/
-#cup-3 {
+/*for player in position 2*/
+#cup-2 {
     position: absolute;
-    top: 40px;
-    left: 450px;
+    top: 150px;
+    left: -30px;
     height: 5em;
     z-index: 5;
 }
 
+/*for player in position 3*/
+#cup-3 {
+    position: absolute;
+    top: 40px;
+    left: 30px;
+    height: 5em;
+    z-index: 5;
+}
+
+
 /*for player in position 4*/
 #cup-4 {
     position: absolute;
-    top: 270px;
+    top: 40px;
     left: 450px;
     height: 5em;
     z-index: 5;
@@ -89,7 +109,7 @@ body {
 #cup-5 {
     position: absolute;
     top: 150px;
-    left: -30px;
+    left: 530px;
     height: 5em;
     z-index: 5;
 }
@@ -97,11 +117,12 @@ body {
 /*for player in position 6*/
 #cup-6 {
     position: absolute;
-    top: 150px;
-    left: 530px;
+    top: 270px;
+    left: 450px;
     height: 5em;
     z-index: 5;
 }
+
 
 #player-bidding {
     margin-right: 4em;
@@ -114,31 +135,46 @@ body {
 }
 
 #player-1 {
-    top: 270px;
-    left: 30px;
+    top: 300px;
+    left: 90px;
 }
 
 #player-2 {
-    top: 40px;
+    top: 180px;
     left: 30px;
 }
 
 #player-3 {
-    top: 40px;
-    left: 450px;
+    top: 70px;
+    left: 90px;
 }
 
 #player-4 {
-    top: 270px;
-    left: 450px;
+    top: 70px;
+    left: 510px;
 }
 
 #player-5 {
-    top: 150px;
-    left: -30px;
+    top: 180px;
+    left: 590px;
 }
 
 #player-6 {
-    top: 150px;
-    left: 530px;
+    top: 300px;
+    left: 510px;
+}
+
+.die {
+    z-index: 100;
+    position: relative;
+    height: 3em;
+    top: 350px;
+}
+
+/*tool tips*/
+.tooltip .tooltiptext {
+    width: 120px;
+    bottom: 100%;
+    left: 50%; 
+    margin-left: -60px; /* Use half of the width (120/2 = 60), to center the tooltip */
 }

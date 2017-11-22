@@ -196,7 +196,7 @@ def comp_bidding():
     #bid odds and determine resulting bid
     game_id = int(request.form.get('game_id'))
     game = Game.query.filter(Game.id == game_id).first()
-    # players = get_players_in_game(game_id)
+    players = get_players_in_game(game_id)
     player = (AbstractPlayer
               .query
               .filter(AbstractPlayer.game_id == game_id,
@@ -210,6 +210,7 @@ def comp_bidding():
 
     update_turn_marker(game)
     current_turn_player = get_current_turn_player(game)
+    total_dice = get_total_dice(players)
     #check if it's a human player next, if so, pass through odds
     if game.turn_marker == 1:
         player_probs = get_player_probs(game.id, bid.die_choice, bid.die_count)
@@ -221,7 +222,8 @@ def comp_bidding():
                 'turn_marker_name': current_turn_player.name,
                 'turn_marker': game.turn_marker,
                 'game_id': game.id,
-                'player_probs': player_probs}
+                'player_probs': player_probs,
+                'total_dice': total_dice}
     return jsonify(requests)
 
 
@@ -265,6 +267,7 @@ def player_turn():
 
     player = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id,
                                          AbstractPlayer.position == 1).first()
+    players = get_players_in_game(game_id)
     game = Game.query.filter(Game.id == game_id).first()
     #save bid ##make function?
     new_bid = BidHistory(game_id, player.id, die_choice, die_count)
@@ -275,13 +278,15 @@ def player_turn():
     update_turn_marker(game)
 
     current_turn_player = get_current_turn_player(game)
+    total_dice = get_total_dice(players)
 
     requests = {'name': player.name,
                 'die_choice': die_choice,
                 'die_count': die_count,
                 'turn_marker': game.turn_marker,
                 'turn_marker_name': current_turn_player.name,
-                'game_id': game.id}
+                'game_id': game.id,
+                'total_dice': total_dice}
 
     return jsonify(requests)
 
