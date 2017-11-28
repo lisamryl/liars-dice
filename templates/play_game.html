@@ -3,7 +3,7 @@
 <div class="container">
   <div class="row">
     <div class="col-xs-12 col-md-8">
-      <span id="ld-header"> <h1 data-toggle="tooltip" title="Difficulty: {% if game.difficulty == 'h' %} Hard
+      <span id="ld-header"> <h1 data-toggle="tooltip" title="Difficulty:{% if game.difficulty == 'h' %} Hard
         {% elif game.difficulty == 'm' %} Medium {% else %} Easy {% endif %}">Let's Play Liar's Dice!</h1> </span>
       <div id="game-table">
           <img id="table-image" src="/static/table.png">
@@ -56,9 +56,7 @@
         </table>
       </div>
       <br>
-      <button class='btn-primary btn-sm start-bid'{% if game.turn_marker == 1 %} 
-      hidden
-      {% endif %}>
+      <button id="opp-bidding" class='btn-primary btn-sm start-bid'>
       Start Player Bidding</button>
       <br>
       <button class='btn-primary btn-sm start-new-turn'>Start Next Turn</button>
@@ -77,22 +75,21 @@
             </select><br>
             How many dice do you want to bid?
           <div id="player-die-count-choices">
-            <select name = 'player-die-count'>
-              {% for i in range(1, total_dice + 1) %}
-                  {% if i == 1 %}
-                    <option value="{{ i }}">{{ i }} die</option>
-                  {% else %}
-                    <option value="{{ i }}">{{ i }} dice</option>
+            <select name = 'player-die-count'>{% for i in range(1, total_dice + 1) %}
+                  {% if i == 1 %} <option value="{{ i }}">{{ i }} die</option>
+                  {% else %} <option value="{{ i }}">{{ i }} dice</option>
                   {% endif %}
               {% endfor %}
             </select>
           </div>
-          <br>
           <button type="submit" class='btn-primary btn-sm' id='player-bidding' value="Bid!">Submit Bid!</button>      
-          <button class='btn-primary btn-sm bid-type' id='challenge' value='challenge'>Challenge</button>
-          <button class='btn-primary btn-sm bid-type' id='exact' value='exact'>Exact</button>
-          </div>
+        </div>
         </form>
+          <div id="challenge-exact">
+            <button class='btn-primary btn-sm bid-type' id='challenge' value='challenge'>Challenge</button>
+            <button class='btn-primary btn-sm bid-type' id='exact' value='exact'>Exact</button>
+            <br>
+          </div>
       </div>
       <div id="bid-probs" class="game-table-forms">
         <h2>Bidding Probabilities</h2>

@@ -1,6 +1,6 @@
 #game-messages {
     font-size: 2em;
-    top: 200px;
+    top: 170px;
     left: -50px;
     position: relative;
     color: red;
@@ -177,4 +177,7 @@ body {
     bottom: 100%;
     left: 50%; 
     margin-left: -60px; /* Use half of the width (120/2 = 60), to center the tooltip */
+    z-index: 200;
+    top: 0 !important;
+    color: red;
 }

@@ -189,9 +189,6 @@ def load_games():
 @app.route('/compturn.json', methods=['POST'])
 def comp_bidding():
     """Start the bidding for a computer"""
-
-    ### add while loop to keep processing turns...
-
     #if human, show form on front end and get bid information, if computer, calc
     #bid odds and determine resulting bid
     game_id = int(request.form.get('game_id'))
@@ -211,19 +208,22 @@ def comp_bidding():
     update_turn_marker(game)
     current_turn_player = get_current_turn_player(game)
     total_dice = get_total_dice(players)
-    #check if it's a human player next, if so, pass through odds
+
+    #add bidding probabilities if it's the player's turn next
     if game.turn_marker == 1:
-        player_probs = get_player_probs(game.id, bid.die_choice, bid.die_count)
+        player_probs = get_player_probs(game_id, bid.die_choice, bid.die_count)
     else:
         player_probs = None
+
     requests = {'name': player.name,
                 'die_choice': bid.die_choice,
                 'die_count': bid.die_count,
                 'turn_marker_name': current_turn_player.name,
                 'turn_marker': game.turn_marker,
                 'game_id': game.id,
-                'player_probs': player_probs,
-                'total_dice': total_dice}
+                'total_dice': total_dice,
+                'player_probs': player_probs}
+
     return jsonify(requests)
 
 
@@ -295,6 +295,11 @@ def player_turn():
 def get_game_details():
     """Get details needed to update the values in the die count filters."""
     game_id = request.args.get('game_id')
+    #check if this is the initial round setup (if so, starting turn will be passed)
+    if request.args.get('starting_turn'):
+        starting_turn = True
+    else:
+        starting_turn = False
     game = Game.query.filter(Game.id == game_id).first()
     players = get_active_players_in_game(game.id)
     # if this is the first time the page ever loads, roll dice
@@ -309,9 +314,25 @@ def get_game_details():
                           .order_by(BidHistory.created_at.desc())
                           .first())
 
-    results = {'total_dice': total_dice,
-               'die_count': last_bid.die_count,
-               'die_choice': last_bid.die_choice}
+    #add bidding probabilities if it's the player's turn
+    if game.turn_marker == 1 and last_bid:
+        player_probs = get_player_probs(game_id, last_bid.die_choice, last_bid.die_count)
+    else:
+        player_probs = None
+    if not last_bid:
+        results = {'total_dice': total_dice,
+                   'die_count': None,
+                   'die_choice': None,
+                   'turn_marker': game.turn_marker,
+                   'starting_turn': starting_turn,
+                   'player_probs': player_probs}
+    else:
+        results = {'total_dice': total_dice,
+                   'die_count': last_bid.die_count,
+                   'die_choice': last_bid.die_choice,
+                   'turn_marker': game.turn_marker,
+                   'starting_turn': starting_turn,
+                   'player_probs': player_probs}
 
     return jsonify(results)
 

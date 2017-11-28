@@ -52,7 +52,6 @@ function compTurn(game_id) {
 function startRound(request) {
 //restart round (roll dice and begin bidding)
     console.log("start round was called");
-    console.log(request);
 
     let game_id = getGameId(window.location);
     //restarting round, clear out game messages, clear out probability table,
@@ -60,20 +59,10 @@ function startRound(request) {
     $('#game-messages').empty();
     $('#bids').empty();
     $('#probs').empty();
-    //Hide "start new turn", we don't need it anymore
-    $('.start-new-turn').hide();
-
-    if (request['turn_marker'] == 1) {
-        //if human's turn, show their bid form, hid option to start opponent bids
-        $('#player-bidding-tables').show();
-        $('.start-bid').hide();
-    }
-    else {
-        //if AI turn, hide human bid form, show button to start opponent bids.
-        $('#player-bidding-tables').hide();
-        $('.start-bid').show();
-    }
+    //Post to roll dice
     $.post('/finishturn.json', {'game_id': game_id}, rollDice);
+     //Show only needed information
+    $.get('/game_details.json', {'game_id': game_id}, hideAndUnhide);
 }
 
 function askToStartRound(request) {
@@ -93,9 +82,8 @@ function askToStartRound(request) {
         $('#game-messages').append(`</ul>`);
         // show button for player to start the next turn (hide all other buttons)
         console.log("showing next turn");
-        $('.start-new-turn').show();
-        $('.start-bid').hide();
-        $('#player-bidding-tables').hide();
+        let game_id = getGameId(window.location);
+        $.get('/game_details.json', {'game_id': game_id, 'starting_turn': true}, hideAndUnhide);
     }
 }
 
@@ -107,22 +95,94 @@ function challengeOrExact(request) {
     $.post('/endturn.json', formInputs, askToStartRound);
 }
 
-function updateOptions(request) {
+function updateOptions(response) {
     //Update options to choose from in form based on current bid
     console.log("update options called");
     $("#player-die-count-choices").empty();
     $("#player-die-count-choices").append(`<select name = 'player-die-count'>`)
-    console.log(request['die_count']);
-    console.log(request['die_choice']);
-    for (let i = 0; i <= request['total_dice']; i += 1) {
-        if (i > request['die_count'] && $("#player-die-choice").val() <= request['die_choice']) {
-           $("#player-die-count-choices").append(`<option value="${i}">${i} dice</option>`);
-           console.log(i);
+    // default values if first bid
+    let dieCount = 0;
+    let dieChoice = 6;
+    if (response['die_count']) {
+        // if there's a previous bid, set it
+        console.log("entered if");
+        dieCount = parseInt(response['die_count']);
+        dieChoice = parseInt(response['die_choice']);
+    }
+    let playerDieChoice = parseInt($("#player-die-choice").val());
+    let totalDice = parseInt(response['total_dice']);
+
+    console.log(dieCount);
+    console.log(response['die_choice']);
+    console.log(response['total_dice']);
+    let dropdown = $("<select>");
+    dropdown.attr("name", "player-die-count");
+    console.log($("#player-die-choice").val());
+
+    for (let i = 0; i <= totalDice; i += 1) {
+        if (i > dieCount && playerDieChoice <= dieChoice ||
+           i >= dieCount && playerDieChoice > dieChoice)  {
+           let option = $("<option>");
+           option.attr("value", i);
+           option.append(i + " dice");
+           dropdown.append(option);
         }
     }
-    setTimeout(function () {
-        $("#player-die-count-choices").append(`</select>`);
-        }, 500);
+    $("#player-die-count-choices").empty();
+    $("#player-die-count-choices").append(dropdown);
+}
+
+
+function hideAndUnhide(response) {
+    console.log("hide and unhide called");
+    console.log(response);
+    if (response["starting_turn"] == false) {
+        console.log("hide start new turn");
+        $('.start-new-turn').hide();
+            if (response["turn_marker"] == 1) {
+                console.log("show player details");
+                $('#player-bidding-tables').show();
+                $('#bid-probs').show();
+                $('.start-bid').hide();
+                // update options for case where user doesn't change die choice
+                updateOptions(response);
+                updateProbs(response);
+                if (!response["die_choice"]) {
+                    // check if this is the first bid, if so, don't allow challenge/exact
+                    $('#challenge-exact').hide()
+                }
+            }
+            else {
+                console.log("show comp buttons");
+                $('#player-bidding-tables').hide();
+                $('#bid-probs').hide();
+                $('.start-bid').show();
+            }
+    }
+    else {
+        console.log("show start new turn");
+        $('.start-new-turn').show();
+        $('#player-bidding-tables').hide();
+        $('#bid-probs').hide();       
+        $('.start-bid').hide();
+    }
+}
+
+
+function updateProbs(request) {
+    //Update bidding probabilities for a player
+    console.log("update probs called");
+    $('#bid-probs').show();
+    $('#probs').empty();
+    for (let die_choice in request['player_probs']) {
+        for (let die_count in request['player_probs'][die_choice]) {
+            $('#probs').append(`<tr>
+                <td>${die_choice}</td>
+                <td>${die_count}</td>
+                <td>${Math.round(request['player_probs'][die_choice][die_count] * 100)}%</td>
+                </tr>`);
+        }
+    }
 }
 
 
@@ -144,27 +204,18 @@ function handleBid(request) {
             <td class='die-choice'>${request['die_choice']}</td>
             <td class='die-count'>${request['die_count']}</td>
             </tr>`);
-        console.log("updating bids");
         $('#turn-marker').empty();
         console.log(request['turn_marker_name']);
         console.log(request['turn_marker']);
         $('#turn-marker').append(`Current Turn: ${request['turn_marker_name']}`);
 
         if (request['turn_marker'] == 1) {
+            console.log("showing player bidding");
             $('#player-bidding-tables').show();
             $('.start-bid').hide();
             //Update bidding probabilities table
-            $('#probs').empty();
-            for (let die_choice in request['player_probs']) {
-                for (let die_count in request['player_probs'][die_choice]) {
-                    $('#probs').append(`<tr>
-                        <td>${die_choice}</td>
-                        <td>${die_count}</td>
-                        <td>${Math.round(request['player_probs'][die_choice][die_count] * 100)}%</td>
-                        </tr>`);
-                }
-            }
-            updateOptions(request)
+            updateProbs(request);
+            updateOptions(request);
         }
         else {
             console.log("hidding player bidding div for comp turn");
@@ -194,6 +245,7 @@ $('#bid-form').on('submit', function (evt) {
 
 //clicked when player chooses challenge or exact
 $('.bid-type').on('click', function (evt) {
+    console.log("player chose challenge/exact");
     let bid = evt.target.value;
     let game_id = getGameId(window.location);
     console.log(game_id);
@@ -211,3 +263,11 @@ $('#player-die-choice').on('change', function (evt) {
 $(document).ready(function(){
     $('[data-toggle="tooltip"]').tooltip(); 
 });
+
+//hide and show items
+$(document).ready(function(){
+    console.log("showing and hidding");
+    let game_id = getGameId(window.location);
+    $.get('/game_details.json', {'game_id': game_id}, hideAndUnhide);
+});
+
