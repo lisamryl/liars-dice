@@ -1,28 +1,5 @@
 "use strict";
 
-//Javascript on homepage
-function showSavedGames(results) {
-    let game_ids = results['games'];
-    if (results['games']) {
-        $('#loaded-games').append(`<p><ul>`);
-        for (let i in results['games']) {
-            $('#loaded-games').append(`<a href='/game/${game_ids[i]}'>Game ${game_ids[i]} - Click to Resume Play</a><br>`);
-        }
-        $('#loaded-games').append(`</ul></p>`);
-    }
-    else {
-        $('#loaded-games').append(`<p>You have no saved games, create a new one!</p>`);
-    }
-}
-
-
-$('#load-game').on('click', function (evt) {
-    console.log("pressed load games");
-    evt.preventDefault();
-    $.get('/loadgames.json', showSavedGames);
-});
-
-
 //Javascript on Game page
 function getGameId(url) {
     // Returns game id of active game, based on url passed in
@@ -31,16 +8,35 @@ function getGameId(url) {
 }
 
 function rollDice(request) {
-
     //Refresh data in player details
     console.log("dice rolled");
     console.log(request);
-    for (let player_id in request) {
-        $('#die-count-' + player_id).empty();
-        $('#die-count-' + player_id).append(`Die Count: ${request[player_id].length}`);
-        $('#die-roll-' + player_id).empty();
-        $('#die-roll-' + player_id).append(`Die Roll: [${request[player_id]}]`);
+    let totalDice = 0;
+    // update the player remaining dice counts
+    for (let player in request) {
+        // if the player is now out, remove the player's image and details from
+        // page without refreshing, otherwise update the data.
+        if (request[player].length == 0) {
+            $('#cup-' + player).remove();
+            $('#player-' + player).remove();
+            $('#player-' + player + '-factors').remove();
+        }
+        else {
+            $('#die-count-' + player).empty();
+            $('#die-count-' + player).append(`Dice Left: ${request[player].length}`);
+            totalDice += request[player].length;
+        }
     }
+    // update the die roll for the player with new dice
+    $('#player-die-roll').empty();
+    let die;
+    for (die in request[1]) {
+        console.log(request[1]);
+        $('#player-die-roll').append(`<img id="die-${request[1][die]}" class="die" src="/static/die${request[1][die]}.png">`);
+    }
+    // update the number of dice left
+    $('#die-total').empty();
+    $('#die-total').append(`<h3>Dice Left: ${totalDice}</h3>`);
 }
 
 
@@ -105,7 +101,6 @@ function updateOptions(response) {
     let dieChoice = 6;
     if (response['die_count']) {
         // if there's a previous bid, set it
-        console.log("entered if");
         dieCount = parseInt(response['die_count']);
         dieChoice = parseInt(response['die_choice']);
     }
@@ -136,12 +131,13 @@ function updateOptions(response) {
 function hideAndUnhide(response) {
     console.log("hide and unhide called");
     console.log(response);
-    if (response["starting_turn"] == false) {
+    if (response["starting_turn"] == false || !response["starting_turn"]) {
         console.log("hide start new turn");
         $('.start-new-turn').hide();
             if (response["turn_marker"] == 1) {
                 console.log("show player details");
                 $('#player-bidding-tables').show();
+                $('#challenge-exact').show();
                 $('#bid-probs').show();
                 $('.start-bid').hide();
                 // update options for case where user doesn't change die choice
@@ -149,12 +145,13 @@ function hideAndUnhide(response) {
                 updateProbs(response);
                 if (!response["die_choice"]) {
                     // check if this is the first bid, if so, don't allow challenge/exact
-                    $('#challenge-exact').hide()
+                    $('#challenge-exact').hide();
                 }
             }
             else {
                 console.log("show comp buttons");
                 $('#player-bidding-tables').hide();
+                $('#challenge-exact').hide();
                 $('#bid-probs').hide();
                 $('.start-bid').show();
             }
@@ -163,6 +160,7 @@ function hideAndUnhide(response) {
         console.log("show start new turn");
         $('.start-new-turn').show();
         $('#player-bidding-tables').hide();
+        $('#challenge-exact').hide();
         $('#bid-probs').hide();       
         $('.start-bid').hide();
     }
@@ -172,6 +170,7 @@ function hideAndUnhide(response) {
 function updateProbs(request) {
     //Update bidding probabilities for a player
     console.log("update probs called");
+    console.log(request);
     $('#bid-probs').show();
     $('#probs').empty();
     for (let die_choice in request['player_probs']) {
@@ -189,8 +188,7 @@ function updateProbs(request) {
 function handleBid(request) {
 //handle the bid provided by the player or computer
     console.log("handle bid called");
-    console.log("start new turn hidden");
-    $('.start-new-turn').hide();
+    hideAndUnhide(request);
     if (request['bid'] == 'challenge' | request['bid'] == 'exact') {
         console.log("reached if statement true");
         challengeOrExact(request);
@@ -211,15 +209,11 @@ function handleBid(request) {
 
         if (request['turn_marker'] == 1) {
             console.log("showing player bidding");
-            $('#player-bidding-tables').show();
-            $('.start-bid').hide();
             //Update bidding probabilities table
             updateProbs(request);
             updateOptions(request);
         }
         else {
-            console.log("hidding player bidding div for comp turn");
-            $('#player-bidding-tables').hide();
             setInterval(compTurn(request['game_id']), 500);
         }
     }

@@ -1,9 +1,9 @@
 #game-messages {
     font-size: 2em;
+    color: red;
     top: 170px;
     left: -50px;
     position: relative;
-    color: red;
 }
 
 body {
@@ -55,6 +55,10 @@ body {
     margin: 0px auto;
     padding: 0.3em;
 
+}
+
+.game-tables {
+    display: inline;
 }
 
 #table-image {
@@ -180,4 +184,12 @@ body {
     z-index: 200;
     top: 0 !important;
     color: red;
+}
+
+#gamesInProgress {
+    text-align: center;
+}
+
+#biddingProbs {
+    text-align: center;
 }

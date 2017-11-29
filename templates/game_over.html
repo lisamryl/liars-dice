@@ -9,10 +9,74 @@
 <h2> You lost! You came in {{ human_player.final_place }} place </h2> 
 <!-- note need to add suffix.... -->
 {% endif %}
-<h2><a href="/creategame">Create a new game</a><br></h2>
-<h2><a id='load-game' href="/loadgame">Show Games in Progress</a></h2>
-    <h3><div id = 'loaded-games'>
+        <!-- Create game modal -->
+       <!-- Button trigger modal -->
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createNewGame">
+          Create New Liar's Dice Game!
+        </button>
 
-    </div></h3>
+        <!-- Modal -->
+        <div class="modal fade" id="createNewGame" tabindex="-1" role="dialog" aria-labelledby="createNewGameLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="createNewGameLabel">Create New Game</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <form action='/game', method='POST'>
+                    Please select a difficulty: 
+                    <input type='radio' name='difficulty' value='e' required>Easy
+                    <input type='radio' name='difficulty' value='m' required>Medium
+                    <input type='radio' name='difficulty' value='h' required>Hard<br>
+                    How Many Players (including yourself)?: 
+                    <select name = 'num-players' required>
+                        <option value="2">2 Players</option>
+                        <option value="3">3 Players</option>
+                        <option value="4">4 Players</option>
+                        <option value="5">5 Players</option>
+                        <option value="6">6 Players</option>
+                    </select><br>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Create New Game</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        <br>
+        <br>
+        <!-- Load saved games modal -->
+        <!-- Button trigger modal -->
+        <button type="button" class="btn btn-primary" id="load-inprogress-games" data-toggle="modal" data-target="#gamesInProgress">
+        Show Games in Progress
+        </button>
+
+        <!-- Modal -->
+        <div class="modal fade bd-example-modal-sm" id="gamesInProgress" tabindex="-1" role="dialog" aria-labelledby="gamesInProgressTitle" aria-hidden="true">
+          <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="gamesInProgressTitle">Load Game in Progress</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <h3><div id = 'loaded-games'>
+                </div></h3>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+<script src="/static/homepage.js"></script>
 {% endblock %}

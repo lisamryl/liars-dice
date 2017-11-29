@@ -11,8 +11,9 @@
             <img id="cup-{{  player.position  }}" src="/static/cup.png">
             <span id="player-{{  player.position  }}" class="player-details">
               <b>{{  player.name.title()  }}</b><br>
-              Dice Left: {{ player.die_count }}<br></span>
-              <span id="player-{{  player.position  }}-factors">{% if player.comp %}
+              <span id="die-count-{{ player.position }}">Dice Left: {{ player.die_count }}<br></span></span>
+                {% if player.comp %}
+              <span id="player-{{  player.position  }}-factors">
                 Liar Factor: {{ player.comp.liar_factor }}<br>
                 Aggr Factor: {{ player.comp.aggressive_factor }}<br>
                 Intel Factor: {{ player.comp.intelligence_factor }}</span>
@@ -26,19 +27,12 @@
       <span id="die-total"><h3>Dice Left: {{ total_dice }}</h3></span> 
           
       </div>
-      <b>
-        <div id="game-messages">
-        </div>
-      </b>
     </div>
     <div class="col-xs-12 col-md-4">
-
-        
-      </h3>
       <h3 id='turn-marker'> Current Turn: {{ current_turn_name }}</h3>
       <div class="game-table-forms">
         <h2>Bidding Action</h2>
-        <table align="center" class="table table-sm table-responsive table-bordered">
+        <table class="table table-sm table-responsive table-bordered game-tables">
           <tr>
             <th>Player</th>
             <th>Die Choice</th>
@@ -89,21 +83,57 @@
             <button class='btn-primary btn-sm bid-type' id='challenge' value='challenge'>Challenge</button>
             <button class='btn-primary btn-sm bid-type' id='exact' value='exact'>Exact</button>
             <br>
+            <br>
           </div>
       </div>
-      <div id="bid-probs" class="game-table-forms">
-        <h2>Bidding Probabilities</h2>
-        <table align="center" class="table table-sm table-responsive table-bordered">
-          <tr>
-            <th>Die Choice</th>
-            <th>Die Count</th>
-            <th>Probability</th>
-          </tr>
-          <tbody id='probs'>
-          </tbody>
-        </table>
+      <div id="bid-probs">
+        <!-- Create game modal -->
+       <!-- Button trigger modal -->
+        <button type="button" id="bidding-probs" class="btn btn-primary" data-toggle="modal" data-target="#showProbs">
+          Show Bidding Probabilities
+        </button>
+
+        <!-- Modal -->
+        <div class="modal fade" id="showProbs" tabindex="-1" role="dialog" aria-labelledby="showProbsLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="showProbsLabel">Bidding Probabilities</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                  <table class="table table-sm table-responsive table-bordered game-tables">
+                    <tr>
+                      <th>Die Choice</th>
+                      <th>Die Count</th>
+                      <th>Probability</th>
+                    </tr>
+                    <tbody id='probs'>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 </div>
+<div class="container">
+  <div class="row">
+    <div class="col-xs-12 col-md-8">
+      <b>
+      <div id="game-messages">
+      </div>
+      </b>
+    </div>
+  </div>
+</div>
+<script src="/static/game_play.js"></script>
 {% endblock %}

@@ -13,7 +13,7 @@ def roll_player_dice(players):
     player_info = {}
     for player in players:
         player.roll_dice()
-        player_info[player.id] = player.current_die_roll
+        player_info[player.position] = player.current_die_roll
     db.session.commit()
 
     return player_info
@@ -176,7 +176,7 @@ def determine_loser_and_winner(game_id, bid_type, challenger,
         messages.append(challenger.name.title() + " bid exact on " +
                         str(last_bid.die_count) + " " +
                         str(last_bid.die_choice) + "s.")
-        messages.append("The correct bid was exactly " + str(actual_die_count) +
+        messages.append("The correct bid was " + str(actual_die_count) +
                         " " + str(last_bid.die_choice) + "s.")
 
     #determine winner and loser of the challenge/exact bid
@@ -339,9 +339,13 @@ def get_player_probs(game_id, die_choice, die_count):
             #delete keys (where k <= choice) up to (not including)
             #the current die count (since those are not possible to bid on)
             for i in range(die_count):
-                del prob_map[k][i]
+                try:
+                    del prob_map[k][i]
+                #key may not exist
+                except KeyError:
+                    continue
             #delete keys for bigger numbers, which are less likely to be bid on
-            for i in range(die_count + 2, total_dice):
+            for i in range(die_count + 2, total_dice + 1):
                 try:
                     del prob_map[k][i]
                 #key may not exist
@@ -351,9 +355,13 @@ def get_player_probs(game_id, die_choice, die_count):
             #delete keys (where k <= choice) up to and including
             #the current die count (since those are not possibl to bid on)
             for i in range(die_count + 1):
-                del prob_map[k][i]
+                try:
+                    del prob_map[k][i]
+                #key may not exist
+                except KeyError:
+                    continue
             #delete keys for bigger numbers, which are less likely to be bid on
-            for i in range(die_count + 3, total_dice):
+            for i in range(die_count + 3, total_dice + 1):
                 try:
                     del prob_map[k][i]
                 #key may not exist

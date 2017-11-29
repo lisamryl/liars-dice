@@ -179,6 +179,8 @@ def load_games():
         if human.die_count > 0 and not human.game.is_finished:
             game_ids.append(human.game_id)
 
+    game_ids.sort()
+
     if len(game_ids) == 0:
         return jsonify({})
 
@@ -208,6 +210,7 @@ def comp_bidding():
     update_turn_marker(game)
     current_turn_player = get_current_turn_player(game)
     total_dice = get_total_dice(players)
+    print "total dice ", total_dice
 
     #add bidding probabilities if it's the player's turn next
     if game.turn_marker == 1:
@@ -346,6 +349,6 @@ if __name__ == "__main__":
     connect_to_db(app)
 
     # Use the DebugToolbar
-    DebugToolbarExtension(app)
+    # DebugToolbarExtension(app)
 
     app.run(port=5000, host='0.0.0.0')
