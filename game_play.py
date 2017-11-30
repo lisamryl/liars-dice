@@ -53,9 +53,15 @@ def create_new_game(num_players, difficulty, username):
     player = HumanPlayer(user_info.name, user_info.id, game_id, 1)
     db.session.add(player)
 
+    opponent_names = {1: 'Harry (AI)',
+                      2: 'Hermione (AI)',
+                      3: 'Ron (AI)',
+                      4: 'Voldemort (AI)',
+                      5: 'Dumbledore (AI)'}
+
     #Create new AI objects
     for i in range(1, num_players):
-        AI_i = AIPlayer("opponent_" + str(i), difficulty, game_id, i + 1)  # eventually randomly generate an Opp name
+        AI_i = AIPlayer(opponent_names[i], difficulty, game_id, i + 1)
         db.session.add(AI_i)
     db.session.commit()
 
@@ -167,13 +173,13 @@ def determine_loser_and_winner(game_id, bid_type, challenger,
 
     #flash who challenged/called exact, and what bid was challenged
     if bid_type == "challenge":
-        messages.append(challenger.name.title() + " challenged the bid of " +
+        messages.append(challenger.name + " challenged the bid of " +
                         str(last_bid.die_count) + " " +
                         str(last_bid.die_choice) + "s.")
         messages.append("The correct bid was " + str(actual_die_count) +
                         " (or less) " + str(last_bid.die_choice) + "s.")
     else:
-        messages.append(challenger.name.title() + " bid exact on " +
+        messages.append(challenger.name + " bid exact on " +
                         str(last_bid.die_count) + " " +
                         str(last_bid.die_choice) + "s.")
         messages.append("The correct bid was " + str(actual_die_count) +
@@ -185,28 +191,28 @@ def determine_loser_and_winner(game_id, bid_type, challenger,
         last_bidder.die_count -= 1
         loser = last_bidder
         winner = challenger
-        messages.append(challenger.name.title() + " was correct, so " +
-                        loser.name.title() + " loses a die!")
+        messages.append(challenger.name + " was correct, so " +
+                        loser.name + " loses a die!")
     elif actual_die_count >= last_bid.die_count and bid_type == "challenge":
         #bid challenged, challenger loses
         challenger.die_count -= 1
         loser = challenger
         winner = last_bidder
-        messages.append(challenger.name.title() + " was wrong and loses a die!")
+        messages.append(challenger.name + " was wrong and loses a die!")
     elif actual_die_count == last_bid.die_count and bid_type == "exact":
         #exact bidder wins
         #check if there is an extra die to give (total dice < starting dice)
         if sum(counts.values()) < num_players * 5:
             challenger.die_count += 1
-            messages.append(challenger.name.title() +
+            messages.append(challenger.name +
                             " was correct and gains a die!")
         else:
-            messages.append(challenger.name.title() +
+            messages.append(challenger.name +
                             " was correct, but there are no dice to gain!")
         loser = last_bidder
         winner = challenger
     else:
-        messages.append(challenger.name.title() +
+        messages.append(challenger.name +
                         " was not correct and loses a die!")
         #exact bidder is wrong, loses a die
         challenger.die_count -= 1
@@ -280,7 +286,7 @@ def get_bidding_result(game_id, bid_type):
                                                          last_bid)
 
     if is_loser_out(loser):
-        messages.append(loser.name.title() + " is out of the game!")
+        messages.append(loser.name + " is out of the game!")
         is_game_over = check_for_game_over(loser, winner)
         #database would now be updated, check if player is out
         did_human_lose = human_player.final_place
