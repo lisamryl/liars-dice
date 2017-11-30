@@ -14,7 +14,7 @@
               <span id="die-count-{{ player.position }}">Dice Left: {{ player.die_count }}<br></span></span>
                 {% if player.comp %}
                 <!-- Button for model - opponent factors -->
-                  <span id="stats-{{ player.position }}"><button type="button" class="btn btn-primary btn-xs player-factors" data-toggle="modal" data-target="#{{ player.position }}Factors">
+                  <span id="stats-{{ player.position }}"><button type="button" class="btn btn-primary btn-xs player-factors probs-button" data-toggle="modal" data-target="#{{ player.position }}Factors">
                     View Factors
                   </button></span>
 
@@ -50,6 +50,10 @@
       <span id="die-total"><h3>Dice Left: {{ total_dice }}</h3></span> 
           
       </div>
+      <b>
+      <div id="game-messages">
+      </div>
+      </b>
     </div>
     <div class="col-xs-12 col-md-4">
       <h3 id='turn-marker'> Current Turn: {{ current_turn_name }}</h3>
@@ -82,7 +86,7 @@
         <h3>Place Your Bid!</h3>
         <form id='bid-form' action='/playerturn', method='POST' >
           <input type='hidden' value='{{ game.id }}' name='game-id'>
-          <div class="form-group">Which die do you want to bid on?
+          <div class="form-group"><span class="form-inputs">Which die do you want to bid on?</span>
             <select id="player-die-choice" name = 'player-die-choice'>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -90,7 +94,7 @@
                 <option value="5">5</option>
                 <option value="6">6</option>
             </select><br>
-            How many dice do you want to bid?
+            <span class="form-inputs">How many dice do you want to bid?</span>
           <div id="player-die-count-choices">
             <select name = 'player-die-count'>{% for i in range(1, total_dice + 1) %}
                   {% if i == 1 %} <option value="{{ i }}">{{ i }} die</option>
@@ -112,7 +116,7 @@
       <div id="bid-probs">
         <!-- Create game modal -->
        <!-- Button trigger modal -->
-        <button type="button" id="bidding-probs" class="btn btn-primary" data-toggle="modal" data-target="#showProbs">
+        <button type="button" id="bidding-probs" class="btn btn-primary probs-button" data-toggle="modal" data-target="#showProbs">
           Show Bidding Probabilities
         </button>
         <!-- Modal -->
@@ -144,16 +148,6 @@
         </div>
 
       </div>
-    </div>
-  </div>
-</div>
-<div class="container">
-  <div class="row">
-    <div class="col-xs-12 col-md-8">
-      <b>
-      <div id="game-messages">
-      </div>
-      </b>
     </div>
   </div>
 </div>

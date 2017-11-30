@@ -112,7 +112,8 @@ def get_current_turn_player(game):
     Returns: the player object of the player who's turn it is."""
     current_turn_player = (AbstractPlayer
                            .query
-                           .filter(AbstractPlayer.position == game.turn_marker)
+                           .filter(AbstractPlayer.position == game.turn_marker,
+                                   AbstractPlayer.game_id == game.id)
                            .first())
     return current_turn_player
 
