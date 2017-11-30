@@ -322,11 +322,14 @@ def get_game_details():
         player_probs = get_player_probs(game_id, last_bid.die_choice, last_bid.die_count)
     else:
         player_probs = None
+    current_turn_player = get_current_turn_player(game)
+
     if not last_bid:
         results = {'total_dice': total_dice,
                    'die_count': None,
                    'die_choice': None,
                    'turn_marker': game.turn_marker,
+                   'turn_marker_name': current_turn_player.name,
                    'starting_turn': starting_turn,
                    'player_probs': player_probs}
     else:
@@ -334,10 +337,48 @@ def get_game_details():
                    'die_count': last_bid.die_count,
                    'die_choice': last_bid.die_choice,
                    'turn_marker': game.turn_marker,
+                   'turn_marker_name': current_turn_player.name,
                    'starting_turn': starting_turn,
                    'player_probs': player_probs}
 
     return jsonify(results)
+
+
+@app.route('/factor_charts.json')
+def get_factor_charts():
+    """Gets details needed to render charts for opponents."""
+    game_id = request.args.get('game_id')
+    player_position = request.args.get('position')
+    player = (AbstractPlayer
+              .query
+              .filter(AbstractPlayer.game_id == game_id,
+                      AbstractPlayer.position == player_position)
+              .order_by(AbstractPlayer.id)
+              .first())
+
+    data_dict = {
+        "labels": [
+            "Bluffing",
+            "Aggression",
+            "Intelligence"
+        ],
+        "position": [player_position],
+        "datasets": [
+            {
+                "data": [player.comp.liar_factor, player.comp.aggressive_factor, player.comp.intelligence_factor],
+                "backgroundColor": [
+                    "#FF6384",
+                    "#36A2EB",
+                    "#FFCE56"
+                ],
+                "hoverBackgroundColor": [
+                    "#FF6384",
+                    "#36A2EB",
+                    "#FFCE56"
+                ]
+            }]
+    }
+    return jsonify(data_dict)
 
 
 if __name__ == "__main__":

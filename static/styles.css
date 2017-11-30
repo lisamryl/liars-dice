@@ -1,7 +1,7 @@
 #game-messages {
     font-size: 2em;
     color: red;
-    top: 170px;
+    top: 130px;
     left: -50px;
     position: relative;
 }
@@ -173,6 +173,7 @@ body {
     position: relative;
     height: 3em;
     top: 350px;
+    padding-right: 5px;
 }
 
 /*tool tips*/
@@ -192,4 +193,41 @@ body {
 
 #biddingProbs {
     text-align: center;
+}
+
+.player-factors {
+    z-index: 300;
+    position: relative;
+    padding: 0.1em;
+}
+
+#stats-2 {
+    top: 225px;
+    left: 30px;
+    position: absolute;
+/*    background-color: #665570;*/
+}
+
+#stats-3 {
+    top: 115px;
+    left: 90px;
+    position: absolute;
+}
+
+#stats-4 {
+    top: 115px;
+    left: 510px;
+    position: absolute;
+}
+
+#stats-5 {
+    top: 225px;
+    left: 590px;
+    position: absolute;
+}
+
+#stats-6 {
+    top: 343px;
+    left: 510px;
+    position: absolute;
 }

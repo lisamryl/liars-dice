@@ -219,8 +219,15 @@ def get_new_bid(prob_dictionary):
             index_num = int(math.floor(float((random_prob - accumulated)) / item))
             print "index num {}".format(index_num)
             print "value {}".format(value)
-            die_choice = value[index_num][0]
-            die_count = value[index_num][1]
+            ###due to bug, investigate and fix this later
+            try:
+                die_choice = value[index_num][0]
+            except:
+                die_choice = value[index_num - 1][0]
+            try:
+                die_count = value[index_num][1]
+            except:
+                die_count = value[index_num - 1][1]
             new_bid = tuple([die_choice, die_count])
             print "new bid {}".format(new_bid)
 

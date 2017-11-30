@@ -20,6 +20,7 @@ function rollDice(request) {
             $('#cup-' + player).remove();
             $('#player-' + player).remove();
             $('#player-' + player + '-factors').remove();
+            $('#stats-' + player).remove();
         }
         else {
             $('#die-count-' + player).empty();
@@ -37,6 +38,17 @@ function rollDice(request) {
     // update the number of dice left
     $('#die-total').empty();
     $('#die-total').append(`<h3>Dice Left: ${totalDice}</h3>`);
+
+    //update the current turn marker
+    let game_id = getGameId(window.location);
+    $.get('/game_details.json', {'game_id': game_id}, function(response) {
+        console.log("current turn updating");
+        console.log(response);
+        $('#turn-marker').empty();
+        console.log(response['turn_marker_name']);
+        console.log(response['turn_marker']);
+        $('#turn-marker').append(`Current Turn: ${response['turn_marker_name']}`);
+    });  
 }
 
 
@@ -219,6 +231,29 @@ function handleBid(request) {
     }
 }
 
+function showCharts(data) {
+    console.log("got to show charts function");
+    let ctx = $("#stats-chart-" + data['position'][0]).get(0).getContext("2d");
+    console.log(ctx);
+    console.log("showing data");
+  let myChart = new Chart(ctx, {
+      type: 'bar',
+      data: data,
+      options: {
+          legend: {
+            display: false
+          },
+          scales: {
+              yAxes: [{
+                  ticks: {
+                      beginAtZero:true
+                  }
+              }]
+          }
+      }
+  });
+}
+
 $('.start-new-turn').on('click', startRound)
 
 $('.start-bid').on('click', function () {
@@ -265,3 +300,17 @@ $(document).ready(function(){
     $.get('/game_details.json', {'game_id': game_id}, hideAndUnhide);
 });
 
+
+//Show charts for opponents
+$(document).ready(function (evt) {
+    // render charts
+    console.log("showing charts");
+    let game_id = getGameId(window.location);
+    for (let i = 2; i <= 6; i += 1) {
+        if ($('#stats-chart-' + i)) {
+        console.log("#stats-chart-" + i);
+        $.get('/factor_charts.json', {'game_id': game_id, 'position': i}, showCharts);
+        }
+    }
+});
+  

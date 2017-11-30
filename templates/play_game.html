@@ -13,10 +13,33 @@
               <b>{{  player.name.title()  }}</b><br>
               <span id="die-count-{{ player.position }}">Dice Left: {{ player.die_count }}<br></span></span>
                 {% if player.comp %}
-              <span id="player-{{  player.position  }}-factors">
-                Liar Factor: {{ player.comp.liar_factor }}<br>
-                Aggr Factor: {{ player.comp.aggressive_factor }}<br>
-                Intel Factor: {{ player.comp.intelligence_factor }}</span>
+                <!-- Button for model - opponent factors -->
+                  <span id="stats-{{ player.position }}"><button type="button" class="btn btn-primary btn-xs player-factors" data-toggle="modal" data-target="#{{ player.position }}Factors">
+                    View Factors
+                  </button></span>
+
+                    <!-- Modal -->
+                    <div class="modal fade" id="{{ player.position }}Factors" tabindex="-1" role="dialog" aria-labelledby="{{ player.position }}FactorsLabel" aria-hidden="true">
+                      <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="{{ player.position }}FactorsLabel">Opponent Factors</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                            </button>
+                          </div>
+                          <div class="modal-body">
+                            <canvas id="stats-chart-{{  player.position  }}" width="400" height="400"></canvas>
+                            <!-- <div id="legend-{{  player.position  }}" class="chart-legend"></div> -->
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+
               {% else %}
                 <span id="player-die-roll">
                     {% for die in player.current_die_roll %}
@@ -92,7 +115,6 @@
         <button type="button" id="bidding-probs" class="btn btn-primary" data-toggle="modal" data-target="#showProbs">
           Show Bidding Probabilities
         </button>
-
         <!-- Modal -->
         <div class="modal fade" id="showProbs" tabindex="-1" role="dialog" aria-labelledby="showProbsLabel" aria-hidden="true">
           <div class="modal-dialog" role="document">
