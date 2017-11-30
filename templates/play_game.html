@@ -10,7 +10,7 @@
           {% for player in players %}
             <img id="cup-{{  player.position  }}" src="/static/cup.png">
             <span id="player-{{  player.position  }}" class="player-details">
-              <b>{{  player.name.title()  }}</b><br>
+              <b>{{  player.name  }}</b><br>
               <span id="die-count-{{ player.position }}">Dice Left: {{ player.die_count }}<br></span></span>
                 {% if player.comp %}
                 <!-- Button for model - opponent factors -->
