@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<h1> Welcome to Liar's Dice! </h1>
+<h1 class="homepage-object"> Welcome to Liar's Dice! </h1>
+      <!-- Instructions button -->
        <!-- Button trigger modal -->
-        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#instructions">
+        <button type="button" class="btn btn-primary homepage-object" data-toggle="modal" data-target="#instructions">
           Instructions
         </button><br><p></p>
 
@@ -37,6 +38,7 @@
 
                   <h3>Ending the Game</h3>
                   <p>If a player runs out of dice, they're out of the game. The rest of the players continue to play until there are no players in the game. When there are no longer any players in the game, the remaining player is the winner!</p>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
               </div>
             </div>
           </div>
@@ -47,7 +49,7 @@
   {% if session.get('username') %}
         <!-- Create game modal -->
        <!-- Button trigger modal -->
-        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createNewGame">
+        <button type="button" class="btn btn-primary homepage-object" data-toggle="modal" data-target="#createNewGame">
           Create New Liar's Dice Game!
         </button>
 
@@ -89,7 +91,7 @@
         <p></p>
         <!-- Load saved games modal -->
         <!-- Button trigger modal -->
-        <button type="button" class="btn btn-primary" id="load-inprogress-games" data-toggle="modal" data-target="#gamesInProgress">
+        <button type="button" class="btn btn-primary homepage-object" id="load-inprogress-games" data-toggle="modal" data-target="#gamesInProgress">
         Show Games in Progress
         </button>
 

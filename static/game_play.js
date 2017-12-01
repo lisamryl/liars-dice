@@ -226,7 +226,7 @@ function handleBid(request) {
             updateOptions(request);
         }
         else {
-            setInterval(compTurn(request['game_id']), 500);
+            compTurn(request['game_id']);
         }
     }
 }

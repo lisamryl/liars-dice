@@ -10,6 +10,10 @@ body {
     color: #020611;
 }
 
+.homepage-object {
+    margin-left: 5px;
+}
+
 .btn-sm, .btn-group-sm > .btn {
     background-color: #2d4354;
     border-color: #020611;
@@ -227,7 +231,7 @@ body {
 }
 
 #stats-6 {
-    top: 343px;
+    top: 345px;
     left: 510px;
     position: absolute;
 }

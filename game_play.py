@@ -57,7 +57,7 @@ def create_new_game(num_players, difficulty, username):
                       2: 'Hermione (AI)',
                       3: 'Ron (AI)',
                       4: 'Voldemort (AI)',
-                      5: 'Dumbledore (AI)'}
+                      5: 'Snape (AI)'}
 
     #Create new AI objects
     for i in range(1, num_players):
