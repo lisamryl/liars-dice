@@ -159,7 +159,6 @@ def play_game(game_id):
 @app.route('/game_over/<game_id>')
 def game_over(game_id):
     """Display end game to user"""
-    print "enter end game route"
     game = Game.query.filter(Game.id == game_id).first()
     human_player = AbstractPlayer.query.filter(AbstractPlayer.game_id == game_id,
                                                AbstractPlayer.position == 1).first()
@@ -210,7 +209,6 @@ def comp_bidding():
     update_turn_marker(game)
     current_turn_player = get_current_turn_player(game)
     total_dice = get_total_dice(players)
-    print "total dice ", total_dice
 
     #add bidding probabilities if it's the player's turn next
     if game.turn_marker == 1:
@@ -240,10 +238,8 @@ def finish_turn():
 
     ####dont do this automatically!!!
     #Clear bid history after round
-    print "deleting bid history...."
     BidHistory.query.filter(BidHistory.game_id == game_id).delete()
     #roll dice for next round
-    print "rolling player dice..."
     player_info = roll_player_dice(players)
     db.session.commit()
 

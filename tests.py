@@ -15,7 +15,8 @@ def example_data():
     u = User(username='l@gmail.com', password='test', name='Test', date_of_birth=dob)
     g = Game(num_players=4, difficulty='h')
     g2 = Game(num_players=4, difficulty='e')
-    db.session.add_all([u, g, g2])
+    g3 = Game(num_players=4, difficulty='e')
+    db.session.add_all([u, g, g2, g3])
     db.session.commit()
     p = HumanPlayer(name='Test', user_id=1, game_id=1, position=1)
     o_1 = AIPlayer(name="opponent_1", difficulty='h', game_id=1, position=2)
@@ -25,7 +26,11 @@ def example_data():
     o_1_2 = AIPlayer(name="opponent_1", difficulty='e', game_id=2, position=2)
     o_2_2 = AIPlayer(name="opponent_2", difficulty='e', game_id=2, position=3)
     o_3_2 = AIPlayer(name="opponent_3", difficulty='e', game_id=2, position=4)
-    db.session.add_all([p, o_1, o_2, o_3, p_2, o_1_2, o_2_2, o_3_2])
+    p_3 = HumanPlayer(name='Test', user_id=1, game_id=3, position=1)
+    o_1_3 = AIPlayer(name="opponent_1", difficulty='e', game_id=3, position=2)
+    o_2_3 = AIPlayer(name="opponent_2", difficulty='e', game_id=3, position=3)
+    o_3_3 = AIPlayer(name="opponent_3", difficulty='e', game_id=3, position=4)
+    db.session.add_all([p, o_1, o_2, o_3, p_2, o_1_2, o_2_2, o_3_2, p_3, o_1_3, o_2_3, o_3_3])
     db.session.commit()
     # can't have bid history without knowing who is starting...
     # b = BidHistory(game_id=1, player_id=1, die_choice=5, die_count=5)
@@ -56,6 +61,10 @@ class GamePlayUnitTests(unittest.TestCase):
                          .query
                          .filter(AbstractPlayer.game_id == 2)
                          .all())
+        self.players3 = (AbstractPlayer
+                         .query
+                         .filter(AbstractPlayer.game_id == 3)
+                         .all())
 
     def tearDown(self):
         """Do at end of every test."""
@@ -75,17 +84,28 @@ class GamePlayUnitTests(unittest.TestCase):
             assert max(sample_roll) <= 6
             assert min(sample_roll) >= 1
 
-    def test_check_for_game_over(self):
+    def test_check_for_game_over_when_false(self):
         """Create a loser and winner; test what check_for_game_over returns."""
-        loser = self.players[0]
-        winner = self.players[1]
+        loser = self.players3[0]
+        winner = self.players3[1]
         loser.die_count = 0
 
-        #with 2 players left, when someone loses and has 0 dice, return true
-        assert check_for_game_over(loser, winner, 2)
         #with 4 players left, when someone loses and has 0 dice, return false,
         #game is still active (there's a separate check for if human is out).
-        assert not check_for_game_over(loser, winner, 4)
+        assert not check_for_game_over(loser, winner)
+
+    def test_check_for_game_over_when_true(self):
+        """Create a loser and winner; test what check_for_game_over returns."""
+        loser = self.players3[0]
+        winner = self.players3[1]
+        loser.die_count = 0
+
+        self.players3[2].die_count = 0
+        self.players3[2].final_place = 4
+        self.players3[3].die_choice = 0
+        self.players3[3].final_place = 3
+        #with 2 players left, when someone loses and has 0 dice, return true
+        assert check_for_game_over(loser, winner)
 
     def test_get_counts_of_dice(self):
         """Create specific die rolls and check that counts sums correctly.
@@ -210,6 +230,7 @@ class BiddingUnitTests(unittest.TestCase):
 
     print "running unit tests for bidding"
 
+
     def setUp(self):
         """Do at start of every test."""
         self.client = app.test_client()
@@ -222,7 +243,18 @@ class BiddingUnitTests(unittest.TestCase):
         db.create_all()
         example_data()
 
-        self.players = AbstractPlayer.query.filter(AbstractPlayer.game_id == 1).all()
+        self.players = (AbstractPlayer
+                        .query
+                        .filter(AbstractPlayer.game_id == 1)
+                        .all())
+        self.players2 = (AbstractPlayer
+                         .query
+                         .filter(AbstractPlayer.game_id == 2)
+                         .all())
+        self.players3 = (AbstractPlayer
+                         .query
+                         .filter(AbstractPlayer.game_id == 3)
+                         .all())
 
     def tearDown(self):
         """Do at end of every test."""
@@ -267,38 +299,32 @@ class BiddingUnitTests(unittest.TestCase):
         self.assertIn(expected_str_2, probs2)
         self.assertIn(expected_str_3, probs2)
 
-
-class ModelUnitTests(unittest.TestCase):
-    """Testing functions"""
-
-    print "running unit tests for model"
-
-    def setUp(self):
-        """Do at start of every test."""
-        self.client = app.test_client()
-        app.config['TESTING'] = True
-
-        # Connect to test database
-        connect_to_db(app=app, uri="postgresql:///testdb")
-
-        # Create tables and add sample data
-        db.create_all()
-        example_data()
-
-        self.players = AbstractPlayer.query.filter(AbstractPlayer.game_id == 1).all()
-
-    def tearDown(self):
-        """Do at end of every test."""
-        db.session.close()
-        db.drop_all()
-
     def test_get_total_dice(self):
 
         assert get_total_dice(self.players) == 20
 
-    def test_get_players_in_game(self):
+    def test_get_initial_turn_bid(self):
+        """This will return a random die choice and count based on bidding
+        algorithm. Need to check that the numbers returns (as a tuple) are
+        valid options."""
 
-        assert get_players_in_game(1) == self.players
+        roll_player_dice(self.players)
+
+        rand_opp = (AbstractPlayer
+                    .query
+                    .filter(AbstractPlayer.game_id == 1,
+                            AbstractPlayer.position != 1)
+                    .first())
+
+        #random die choice should always be between 2 and 6, inclusive
+        assert get_initial_turn_bid(rand_opp)[0] <= 6
+        assert get_initial_turn_bid(rand_opp)[0] > 1
+        #die count
+        assert get_initial_turn_bid(rand_opp)[1] in (1,
+                                                     rand_opp.die_count - 1,
+                                                     rand_opp.die_count - 2,
+                                                     rand_opp.die_count - 3)
+        assert get_initial_turn_bid(rand_opp)[1] >= 1
 
 
 class ServerTests(unittest.TestCase):
@@ -327,11 +353,6 @@ class ServerTests(unittest.TestCase):
         """Testing homepage."""
         result = self.client.get("/")
         self.assertIn("Welcome to Liar's Dice!", result.data)
-
-    def testInstructions(self):
-        """Testing Instructions page."""
-        result = self.client.get("/instructions")
-        self.assertIn("Initial Setup", result.data)
 
     def testRegister(self):
         """Testing Registration page."""
@@ -408,11 +429,68 @@ class ServerTests(unittest.TestCase):
         self.assertNotIn("Create New", result.data)
         self.assertIn("You already have an account", result.data)
 
-    def testCreateGame(self):
-        game_info = {'difficulty': 'h', 'num_players': 4}
-        result = self.client.post("/creategame", data=game_info,
-                                  follow_redirects=True)
-        self.assertNotIn("Let's Play Liar's", result.data)
+
+class ServerAjaxRouteTests(unittest.TestCase):
+    """Tests for my server page AJAX calls."""
+
+    print "running AJAX tests"
+
+    def setUp(self):
+        """Do at start of every test."""
+        self.client = app.test_client()
+        app.config['TESTING'] = True
+
+        # Connect to test database
+        connect_to_db(app=app, uri='postgresql:///testdb')
+
+        # Create tables and add sample data
+        db.create_all()
+        example_data()
+
+        self.game = Game.query.filter(Game.id == 1).first()
+        #set turn marker so it's never the human player's turn
+        self.game.turn_marker = 2
+
+        self.players = (AbstractPlayer
+                        .query
+                        .filter(AbstractPlayer.game_id == 1)
+                        .all())
+
+        roll_player_dice(self.players)
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess['username'] = 'l@gmail.com'
+
+    def tearDown(self):
+        """Do at end of every test."""
+        db.session.close()
+        db.drop_all()
+
+    def testLoadGames(self):
+        """Testing load games AJAX request."""
+        result = self.client.get("/loadgames.json")
+        self.assertIn("games", result.data)
+        self.assertIn("1", result.data)
+        self.assertNotIn("5", result.data)
+
+    def testGameDetails(self):
+        """Testing game details AJAX request."""
+        request_data = {'game_id': 1}
+        result = self.client.get("/game_details.json", query_string=request_data)
+        self.assertIn('"total_dice": 20', result.data)
+
+    def testCompTurn(self):
+        """Testing computer turn AJAX request."""
+        request_data = {'game_id': 1}
+        result = self.client.post("/compturn.json", data=request_data)
+        self.assertIn('"total_dice": 20', result.data)
+
+    def testFinishTurn(self):
+        """Testing finish turn AJAX request."""
+        request_data = {'game_id': 1}
+        result = self.client.post("/finishturn.json", data=request_data)
+        self.assertIn('"1": [', result.data)
 
 
 class DatabaseTests(unittest.TestCase):

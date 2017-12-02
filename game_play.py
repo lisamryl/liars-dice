@@ -271,7 +271,6 @@ def get_bidding_result(game_id, bid_type):
                           .filter(BidHistory.game_id == game_id)
                           .order_by(BidHistory.created_at.desc())
                           .first())
-    # print "last bid {} {}".format(last_bid.die_choice, last_bid.die_count)
     challenger = p_query.filter(AbstractPlayer.position == game.turn_marker).first()
     last_bidder = p_query.filter(AbstractPlayer.id == last_bid.player_id).first()
 
@@ -292,7 +291,6 @@ def get_bidding_result(game_id, bid_type):
         #database would now be updated, check if player is out
         did_human_lose = human_player.final_place
         if did_human_lose or is_game_over:
-            print "got to game over"
             requests = {'game_id': game_id,
                         'bid': "game_over"}
             return requests
@@ -302,7 +300,7 @@ def get_bidding_result(game_id, bid_type):
                    .query
                    .filter(AbstractPlayer.position == next_player_position)
                    .first())
-    print messages
+
     requests = {'turn_marker_name': next_player.name,
                 'turn_marker': game.turn_marker,
                 'bid': bid_type,
@@ -325,7 +323,6 @@ def get_player_probs(game_id, die_choice, die_count):
     total_dice = get_total_dice(players)
     prob_map = get_prob_mapping(get_total_dice(players),
                                 human_player.current_die_roll)
-    print prob_map
 
     #get challenge and exact probs (before deleting keys)
     try:
@@ -380,7 +377,5 @@ def get_player_probs(game_id, die_choice, die_count):
     prob_map['Exact'] = {}
     prob_map['Challenge']['Challenge'] = challenge_prob
     prob_map['Exact']['Exact'] = exact_prob
-
-    print prob_map
 
     return prob_map

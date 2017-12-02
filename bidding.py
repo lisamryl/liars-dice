@@ -63,14 +63,8 @@ def get_total_dice(players):
     Returns the total number of dice the players have (int)."""
     total_dice = 0
     for player in players:
-        total_dice += player.die_count  # eventually change to sqlalchemy query (with sum)
+        total_dice += player.die_count
     return total_dice
-
-
-# testing = get_prob_mapping(25, [6, 6, 3, 5, 4])
-# print testing
-# testing2 = get_prob_mapping(25, [6, 6, 3, 5, 1])
-# print testing2
 
 
 def get_initial_turn_bid(opponent):
@@ -156,10 +150,8 @@ def apply_intel_factors(opponent, missing_list, options_map, prob_map, choice, c
     #50% intel, 12 options, eliminate .50/.11 (round down) (or 4 options)
     #80% intel, 12 options, eliminate .80/.11 (round down) (or 7 options)
     max_remove = len(options_map) - 2
-    print "max remove {}".format(max_remove)
     number_to_remove = min(math.floor((opponent.intelligence_factor)/.11),
                            max_remove)
-    print "number to remove {}".format(number_to_remove)
 
     #convert to a dictionary of probs, remove bottom probs
     prob_dictionary = {}
@@ -169,8 +161,6 @@ def apply_intel_factors(opponent, missing_list, options_map, prob_map, choice, c
             prob_dictionary[options_map[k]].append(k)
         else:
             prob_dictionary[options_map[k]] = [k]
-
-    print prob_dictionary
 
     num_removed = 0
     #check through keys of dictionary, if there are enough values to remove
@@ -185,7 +175,6 @@ def apply_intel_factors(opponent, missing_list, options_map, prob_map, choice, c
         else:
             break
 
-    print prob_dictionary
     return prob_dictionary
 
 
@@ -199,11 +188,8 @@ def get_new_bid(prob_dictionary):
         #value of the key * number of options = total value for that key
         sum_probs += (len(value) * int(item))
 
-    print sum_probs
-
     random_prob = randint(0, sum_probs)
 
-    print random_prob
     accumulated = 0
     for item in sorted(prob_dictionary):
         value = prob_dictionary[item]
@@ -212,14 +198,10 @@ def get_new_bid(prob_dictionary):
             #if the item isnt in this set of values, add the sum to the
             #total and continue on to the next set
             accumulated += item_value
-            print accumulated
         else:
             #if the value is in this set of values, divide to get which index
             #the chosen option should be at
             index_num = int(math.floor(float((random_prob - accumulated)) / item))
-            print "index num {}".format(index_num)
-            print "value {}".format(value)
-            ###due to bug, investigate and fix this later
             try:
                 die_choice = value[index_num][0]
             except:
@@ -246,11 +228,6 @@ def bid_for_opp(opponent, current_bid, game, players):
     total_dice = get_total_dice(players)
 
     prob_map = get_prob_mapping(total_dice, current_die_roll)
-
-    print opponent.name
-
-    print "current bid die choice {}".format(current_bid.die_choice)
-    print "current bid die count {}".format(current_bid.die_count)
 
     choice = current_bid.die_choice
     count = current_bid.die_count
@@ -280,9 +257,6 @@ def bid_for_opp(opponent, current_bid, game, players):
             #case where prob of count + 1 and count is 0
             exact_prob = 0
 
-    print "challenge prob {}".format(challenge_prob)
-    print "exact prob {}".format(exact_prob)
-
     # key: tuples of (die choice, die count) value: prob of occurrance
     options_map = {}
 
@@ -293,8 +267,6 @@ def bid_for_opp(opponent, current_bid, game, players):
                 options_map[tuple([k, k2])] = int(prob_map[k][k2] * 100)
             if k <= choice and k2 > count and k2 < count + 3:
                 options_map[tuple([k, k2])] = int(prob_map[k][k2] * 100)
-
-    print options_map
 
     missing_list = []
     for x in range(2, 6):
