@@ -54,3 +54,6 @@ Liar's Dice has not yet been deployed, so here is how to run the app locally:
 ** Players with high aggression are more likely to skip (or jump) a bid for a die that they do have.
 ** Players with high intelligence are more likely to make higher probability moves (moves that have a higher chance of being correct if challenged).
 * If you want a hint about how the opponent's betting style will impact their bidding, check the "View Factors" button next to an opponent. The higher the factor shown, the more likely the player is to make bids reflecting that factor.
+
+## Author
+Lisa Casner is a Software Engineer based in the San Francisco Bay Area.
