@@ -50,9 +50,9 @@ Liar's Dice has not yet been deployed, so here is how to run the app locally:
 * If you are unsure of what to bid, you can click on the purple "Show Bidding Probabilities" button to see how likely the bids you make are to be valid bids.
 * The AI opponent betting styles are based on a bidding algorithm that combines their 3 factors (bluffing, aggression, and intelligence) with the actual probabilities of their bidding options. I generated the factors using the normal distribution with the NumPy library, and calculated the probabilities of each move with the SciPy library.
 * Some detail about the 3 factors:
-..* Players with a higher bluffing factor are more likely to bid on a die that they don't have.
-..* Players with high aggression are more likely to skip (or jump) a bid for a die that they do have.
-..* Players with high intelligence are more likely to make higher probability moves (moves that have a higher chance of being correct if challenged).
+    * Players with a higher bluffing factor are more likely to bid on a die that they don't have.
+    * Players with high aggression are more likely to skip (or jump) a bid for a die that they do have.
+    * Players with high intelligence are more likely to make higher probability moves (moves that have a higher chance of being correct if challenged).
 * If you want a hint about how the opponent's betting style will impact their bidding, check the "View Factors" button next to an opponent. The higher the factor shown, the more likely the player is to make bids reflecting that factor.
 
 ## Author
