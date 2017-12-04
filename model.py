@@ -202,9 +202,6 @@ class AIPlayer(AbstractPlayer):
         players = AbstractPlayer.query.filter(AbstractPlayer.game_id == self.game_id).all()
 
         die_choice, die_count = bid_for_opp(self, current_bid, game, players)
-        print "back to model"
-        print die_choice
-        print die_count
         if die_choice == "Challenge" or die_choice == "Exact":
             return die_choice
 
