@@ -1,7 +1,7 @@
 from jinja2 import StrictUndefined
 
 from flask import (Flask, render_template, redirect, request, flash,
-                   session, jsonify, url_for)
+                   session, jsonify, url_for, g)
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
@@ -21,7 +21,6 @@ app.secret_key = "ABC"
 # silently. This is horrible. Fix this so that, instead, it raises an
 # error.
 app.jinja_env.undefined = StrictUndefined
-
 
 @app.route('/')
 def index():
@@ -383,8 +382,12 @@ if __name__ == "__main__":
     app.debug = True
     app.jinja_env.auto_reload = app.debug  # make sure templates, etc. are not cached in debug mode
 
-    connect_to_db(app)
+    import sys
 
+    if sys.argv[-1] == "setest":
+        connect_to_db(app=app, uri="postgresql:///testdb")
+    else:
+        connect_to_db(app)
     # Use the DebugToolbar
     # DebugToolbarExtension(app)
 

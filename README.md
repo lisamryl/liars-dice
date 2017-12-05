@@ -55,5 +55,19 @@ Liar's Dice has not yet been deployed, so here is how to run the app locally:
     * Players with high intelligence are more likely to make higher probability moves (moves that have a higher chance of being correct if challenged).
 * If you want a hint about how the opponent's betting style will impact their bidding, check the "View Factors" button next to an opponent. The higher the factor shown, the more likely the player is to make bids reflecting that factor.
 
+## Selenium Testing
+To set up phantomjs for selenium testing, run the following in terminal:
+
+sudo apt-get update
+sudo apt-get install build-essential chrpath libssl-dev libxft-dev
+sudo apt-get install libfreetype6 libfreetype6-dev libfontconfig1 libfontconfig1-dev
+wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
+sudo tar xvjf phantomjs-2.1.1-linux-x86_64.tar.bz2 -C /usr/local/share/
+sudo ln -sf /usr/local/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/local/bin
+
+To run selenium tests:
+* In terminal with env activated run: python server.py setests
+* In another terminal with env activated run: python selenium_testing.py 
+
 ## Author
 Lisa Casner is a Software Engineer based in the San Francisco Bay Area.

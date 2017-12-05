@@ -4,7 +4,7 @@
 <h1 class="homepage-object"> Welcome to Liar's Dice! </h1>
       <!-- Instructions button -->
        <!-- Button trigger modal -->
-        <button type="button" class="btn btn-primary homepage-object" data-toggle="modal" data-target="#instructions">
+        <button type="button" class="btn btn-primary homepage-object" id="instructions-button" data-toggle="modal" data-target="#instructions">
           Instructions
         </button><br><p></p>
 
@@ -49,7 +49,7 @@
   {% if session.get('username') %}
         <!-- Create game modal -->
        <!-- Button trigger modal -->
-        <button type="button" class="btn btn-primary homepage-object" data-toggle="modal" data-target="#createNewGame">
+        <button type="button" class="btn btn-primary homepage-object" id="create-game-button" data-toggle="modal" data-target="#createNewGame">
           Create New Liar's Dice Game!
         </button>
 
@@ -66,12 +66,12 @@
               <div class="modal-body">
                 <form action='/game', method='POST'>
                     <span class="form-inputs">Please select a difficulty: </span>
-                    <input type='radio' name='difficulty' value='e' required> Easy
+                    <input type='radio' id="testing-radio-button" name='difficulty' value='e' required> Easy
                     <input type='radio' name='difficulty' value='m' required> Medium
                     <input type='radio' name='difficulty' value='h' required> Hard<br>
                     <span class="form-inputs">How Many Players (including yourself)?</span> 
                     <select name = 'num-players' required>
-                        <option value="2">2 Players</option>
+                        <option id="testing-option-selection" value="2">2 Players</option>
                         <option value="3">3 Players</option>
                         <option value="4">4 Players</option>
                         <option value="5">5 Players</option>
@@ -80,7 +80,7 @@
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Create New Game</button>
+                        <button type="submit" id="submit-create-new" class="btn btn-primary">Create New Game</button>
                 </form>
               </div>
             </div>
