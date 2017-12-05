@@ -58,12 +58,12 @@ Liar's Dice has not yet been deployed, so here is how to run the app locally:
 ## Selenium Testing
 To set up phantomjs for selenium testing, run the following in terminal:
 
-sudo apt-get update
-sudo apt-get install build-essential chrpath libssl-dev libxft-dev
-sudo apt-get install libfreetype6 libfreetype6-dev libfontconfig1 libfontconfig1-dev
-wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
-sudo tar xvjf phantomjs-2.1.1-linux-x86_64.tar.bz2 -C /usr/local/share/
-sudo ln -sf /usr/local/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/local/bin
+1. sudo apt-get update
+2. sudo apt-get install build-essential chrpath libssl-dev libxft-dev
+3. sudo apt-get install libfreetype6 libfreetype6-dev libfontconfig1 libfontconfig1-dev
+4. wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
+5. sudo tar xvjf phantomjs-2.1.1-linux-x86_64.tar.bz2 -C /usr/local/share/
+6. sudo ln -sf /usr/local/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/local/bin
 
 To run selenium tests:
 * In terminal with env activated run: python server.py setests
